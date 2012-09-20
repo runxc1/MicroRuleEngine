@@ -1,0 +1,14 @@
+bin
+obj
+TestResults
+TestResult.xml
+*.suo
+*.log
+*.cache
+*.user
+*.tmp
+*.ldf
+*.mdf
+*.swx
+*.vsmdi
+*.testsettings
