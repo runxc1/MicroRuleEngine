@@ -2,6 +2,8 @@ bin
 obj
 TestResults
 TestResult.xml
+content
+*.nupkg
 *.suo
 *.log
 *.cache

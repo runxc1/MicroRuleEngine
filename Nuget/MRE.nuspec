@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>MRE</id>
+    <version>1.0.1</version>
+    <authors>runxc1</authors>
+    <owners>runxc1</owners>
+    <projectUrl>https://github.com/runxc1/MicroRuleEngine</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>The Micro Rule Engine is a small(As in about 200 lines) Rule Engine that allows you to create Business rules that are not hard coded.  Under the hood MRE creates a Linq Expression tree and compies a rule into an anonymous method i.e. Func&lt;T bool&gt; </description>
+    <releaseNotes>Initial Release.</releaseNotes>
+    <copyright>Copyright 2012</copyright>
+    <tags>Micro RuleEngine business rules logic engine</tags>
+    <dependencies>
+    </dependencies>
+  </metadata>
+</package>
