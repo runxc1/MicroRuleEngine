@@ -58,7 +58,7 @@ namespace MicroRuleEngine
             return BinaryExpression(expressions, operation);
         }
 
-        private static Expression BinaryExpression(IList<Expression> expressions, ExpressionType operationType)
+        private static Expression BinaryExpression(IEnumerable<Expression> expressions, ExpressionType operationType)
         {
             Func<Expression, Expression, Expression> methodExp;
             switch (operationType)
@@ -80,27 +80,22 @@ namespace MicroRuleEngine
             return BuildExpression(expressions, methodExp);
         }
 
-        private static Expression BuildExpression(IList<Expression> expressions,
+        private static Expression BuildExpression(IEnumerable<Expression> expressions,
                                                   Func<Expression, Expression, Expression> method)
         {
-            if (expressions.Count == 1)
-                return expressions[0];
-
-            Expression exp = method(expressions[0], expressions[1]);
-
-            for (int i = 2; expressions.Count > i; i++)
-            {
-                exp = method(exp, expressions[i]);
-            }
-            return exp;
+            return expressions.Aggregate<Expression, Expression>(
+                null, (current, expression) => current == null
+                                                   ? expression
+                                                   : method(current,
+                                                            expression));
         }
 
-        private Expression AndExpressions(IList<Expression> expressions)
+        private Expression AndExpressions(IEnumerable<Expression> expressions)
         {
             return BuildExpression(expressions, Expression.And);
         }
 
-        private Expression OrExpressions(IList<Expression> expressions)
+        private Expression OrExpressions(IEnumerable<Expression> expressions)
         {
             return BuildExpression(expressions, Expression.Or);
         }
