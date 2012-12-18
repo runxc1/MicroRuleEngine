@@ -19,7 +19,7 @@ namespace MicroRuleEngine.Tests
             Rule rule = new Rule
                             {
                                 MemberName = "Customer.Country.CountryCode",
-                                Operator = System.Linq.Expressions.ExpressionType.Equal.ToString("g"),
+                                Operator = ExpressionType.Equal.ToString("g"),
                                 TargetValue = "AUS"
                             };
             MRE engine = new MRE();
@@ -38,9 +38,9 @@ namespace MicroRuleEngine.Tests
             Order order = GetOrder();
             Rule rule = new Rule
                             {
-                                Operator = System.Linq.Expressions.ExpressionType.AndAlso.ToString("g"),
+                                Operator = ExpressionType.AndAlso.ToString("g"),
                                 Rules = new List<Rule>
-                            {
+                                            {
                     new Rule { MemberName = "Customer.LastName", TargetValue = "Doe", Operator = "Equal"},
                     new Rule
                         { 
