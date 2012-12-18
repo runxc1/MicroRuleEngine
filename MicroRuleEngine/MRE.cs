@@ -49,8 +49,7 @@ namespace MicroRuleEngine
         {
             List<Expression> expressions = rules.Select(r => GetExpressionForRule<T>(r, param)).ToList();
 
-            Expression expr = BinaryExpression(expressions, operation);
-            return expr;
+            return BinaryExpression(expressions, operation);
         }
 
         static Expression BinaryExpression(IList<Expression> expressions, ExpressionType operationType)
