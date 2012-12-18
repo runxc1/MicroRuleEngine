@@ -22,10 +22,10 @@ namespace MicroRuleEngine
 
         public bool PassesRules<T>(IList<Rule> rules, T toInspect)
         {
-            return Evaluate<T>(rules).Invoke(toInspect);
+            return Compile<T>(rules).Invoke(toInspect);
         }
 
-        public Func<T, bool> Evaluate<T>(Rule r)
+        public Func<T, bool> Compile<T>(Rule r)
         {
             ParameterExpression paramUser = Expression.Parameter(typeof(T));
             Expression expr = GetExpressionForRule<T>(r, paramUser);
@@ -33,7 +33,7 @@ namespace MicroRuleEngine
             return Expression.Lambda<Func<T, bool>>(expr, paramUser).Compile();
         }
 
-        public Func<T, bool> Evaluate<T>(IList<Rule> rules)
+        public Func<T, bool> Compile<T>(IList<Rule> rules)
         {
             ParameterExpression paramUser = Expression.Parameter(typeof(T));
             Expression expr = BuildNestedExpression<T>(rules, paramUser, ExpressionType.And);

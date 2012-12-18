@@ -23,7 +23,7 @@ namespace MicroRuleEngine.Tests
                                 TargetValue = "AUS"
                             };
             MRE engine = new MRE();
-            var compiledRule = engine.Evaluate<Order>(rule);
+            var compiledRule = engine.Compile<Order>(rule);
             bool passes = compiledRule(order);
             Assert.IsTrue(passes);
 
@@ -54,7 +54,7 @@ namespace MicroRuleEngine.Tests
                 }
                             };
             MRE engine = new MRE();
-            var fakeName = engine.Evaluate<Order>(rule);
+            var fakeName = engine.Compile<Order>(rule);
             bool passes = fakeName(order);
             Assert.IsTrue(passes);
 
@@ -69,11 +69,11 @@ namespace MicroRuleEngine.Tests
             Order order = GetOrder();
             Rule rule = new Rule
                             {
-                                Operator = "HasItem",//The Order Object Contains a method named 'HasItem' that returns true/false
+                                Operator = "HasItem", //The Order Object Contains a method named 'HasItem' that returns true/false
                                 Inputs = new List<object> { "Test" }
                             };
             MRE engine = new MRE();
-            var boolMethod = engine.Evaluate<Order>(rule);
+            var boolMethod = engine.Compile<Order>(rule);
             bool passes = boolMethod(order);
             Assert.IsTrue(passes);
 
@@ -94,7 +94,7 @@ namespace MicroRuleEngine.Tests
                                 Inputs = new List<object> { "ohn" }
                             };
             MRE engine = new MRE();
-            var childPropCheck = engine.Evaluate<Order>(rule);
+            var childPropCheck = engine.Compile<Order>(rule);
             bool passes = childPropCheck(order);
             Assert.IsTrue(passes);
 
@@ -113,7 +113,7 @@ namespace MicroRuleEngine.Tests
                                 TargetValue = @"^[a-zA-Z0-9]*$"
                             };
             MRE engine = new MRE();
-            var regexCheck = engine.Evaluate<Order>(rule);
+            var regexCheck = engine.Compile<Order>(rule);
             bool passes = regexCheck(order);
             Assert.IsTrue(passes);
 
