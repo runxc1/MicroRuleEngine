@@ -1,7 +1,6 @@
-﻿using System;
-using System.Text;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using MicroRuleEngine.Tests.Models;
 
@@ -13,17 +12,16 @@ namespace MicroRuleEngine.Tests
     [TestClass]
     public class ExampleUsage
     {
-
         [TestMethod]
         public void ChildProperties()
         {
-            Order order = this.GetOrder();
-            Rule rule = new Rule()
-            {
-                MemberName = "Customer.Country.CountryCode",
-                Operator = System.Linq.Expressions.ExpressionType.Equal.ToString("g"),
-                TargetValue = "AUS"
-            };
+            Order order = GetOrder();
+            Rule rule = new Rule
+                            {
+                                MemberName = "Customer.Country.CountryCode",
+                                Operator = System.Linq.Expressions.ExpressionType.Equal.ToString("g"),
+                                TargetValue = "AUS"
+                            };
             MRE engine = new MRE();
             var compiledRule = engine.CompileRule<Order>(rule);
             bool passes = compiledRule(order);
@@ -37,22 +35,24 @@ namespace MicroRuleEngine.Tests
         [TestMethod]
         public void ConditionalLogic()
         {
-            Order order = this.GetOrder();
-            Rule rule = new Rule()
-            {
-                Operator = System.Linq.Expressions.ExpressionType.AndAlso.ToString("g"),
-                Rules = new List<Rule>()
-                {
-                    new Rule(){ MemberName = "Customer.LastName", TargetValue = "Doe", Operator = "Equal"},
-                    new Rule(){ 
+            Order order = GetOrder();
+            Rule rule = new Rule
+                            {
+                                Operator = System.Linq.Expressions.ExpressionType.AndAlso.ToString("g"),
+                                Rules = new List<Rule>
+                            {
+                    new Rule { MemberName = "Customer.LastName", TargetValue = "Doe", Operator = "Equal"},
+                    new Rule
+                        { 
                         Operator = "Or",
-                        Rules = new List<Rule>(){
-                            new Rule(){ MemberName = "Customer.FirstName", TargetValue = "John", Operator = "Equal"},
-                            new Rule(){ MemberName = "Customer.FirstName", TargetValue = "Jane", Operator = "Equal"}
+                        Rules = new List<Rule>
+                                    {
+                            new Rule { MemberName = "Customer.FirstName", TargetValue = "John", Operator = "Equal"},
+                            new Rule { MemberName = "Customer.FirstName", TargetValue = "Jane", Operator = "Equal"}
                         }
                     }
                 }
-            };
+                            };
             MRE engine = new MRE();
             var fakeName = engine.CompileRule<Order>(rule);
             bool passes = fakeName(order);
@@ -66,12 +66,12 @@ namespace MicroRuleEngine.Tests
         [TestMethod]
         public void BooleanMethods()
         {
-            Order order = this.GetOrder();
-            Rule rule = new Rule()
-            {
-                Operator = "HasItem",//The Order Object Contains a method named 'HasItem' that returns true/false
-                Inputs = new List<object>{"Test"}
-            };
+            Order order = GetOrder();
+            Rule rule = new Rule
+                            {
+                                Operator = "HasItem",//The Order Object Contains a method named 'HasItem' that returns true/false
+                                Inputs = new List<object> { "Test" }
+                            };
             MRE engine = new MRE();
             var boolMethod = engine.CompileRule<Order>(rule);
             bool passes = boolMethod(order);
@@ -86,13 +86,13 @@ namespace MicroRuleEngine.Tests
         [TestMethod]
         public void ChildPropertyBooleanMethods()
         {
-            Order order = this.GetOrder();
-            Rule rule = new Rule()
-            { 
-                MemberName = "Customer.FirstName",
-                Operator = "EndsWith",//Regular method that exists on string.. As a note expression methods are not available
-                Inputs = new List<object> { "ohn" }
-            };
+            Order order = GetOrder();
+            Rule rule = new Rule
+                            {
+                                MemberName = "Customer.FirstName",
+                                Operator = "EndsWith",//Regular method that exists on string.. As a note expression methods are not available
+                                Inputs = new List<object> { "ohn" }
+                            };
             MRE engine = new MRE();
             var childPropCheck = engine.CompileRule<Order>(rule);
             bool passes = childPropCheck(order);
@@ -105,13 +105,13 @@ namespace MicroRuleEngine.Tests
 
         public void RegexIsMatch()//Had to add a Regex evaluator to make it feel 'Complete'
         {
-            Order order = this.GetOrder();
-            Rule rule = new Rule()
-            {
-                MemberName = "Customer.FirstName",
-                Operator = "IsMatch",
-                TargetValue = @"^[a-zA-Z0-9]*$"
-            };
+            Order order = GetOrder();
+            Rule rule = new Rule
+                            {
+                                MemberName = "Customer.FirstName",
+                                Operator = "IsMatch",
+                                TargetValue = @"^[a-zA-Z0-9]*$"
+                            };
             MRE engine = new MRE();
             var regexCheck = engine.CompileRule<Order>(rule);
             bool passes = regexCheck(order);
@@ -124,24 +124,25 @@ namespace MicroRuleEngine.Tests
 
         public Order GetOrder()
         {
-            Order order = new Order()
-            {
-                OrderId = 1,
-                Customer = new Customer()
-                {
-                    FirstName = "John",
-                    LastName = "Doe",
-                    Country = new Country()
-                    {
-                        CountryCode = "AUS"
-                    }
-                },
-                Items = new List<Item>(){
-                    new Item(){ ItemCode = "MM23", Cost=5.25M},
-                    new Item(){ ItemCode = "LD45", Cost=5.25M},
-                    new Item(){ ItemCode = "Test", Cost=3.33M},
-                }
-            };
+            Order order = new Order
+                              {
+                                  OrderId = 1,
+                                  Customer = new Customer
+                                                 {
+                                                     FirstName = "John",
+                                                     LastName = "Doe",
+                                                     Country = new Country
+                                                                   {
+                                                                       CountryCode = "AUS"
+                                                                   }
+                                                 },
+                                  Items = new List<Item>
+                                              {
+                                                  new Item {ItemCode = "MM23", Cost = 5.25M},
+                                                  new Item {ItemCode = "LD45", Cost = 5.25M},
+                                                  new Item {ItemCode = "Test", Cost = 3.33M},
+                                              }
+                              };
             return order;
         }
     }

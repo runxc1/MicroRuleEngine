@@ -1,7 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace MicroRuleEngine.Tests.Models
 {
@@ -9,14 +7,14 @@ namespace MicroRuleEngine.Tests.Models
     {
         public Order()
         {
-            this.Items = new List<Item>();
+            Items = new List<Item>();
         }
         public int OrderId { get; set; }
         public Customer Customer { get; set; }
         public List<Item> Items { get; set; }
         public bool HasItem(string itemCode)
         {
-            return this.Items.Any(x => x.ItemCode == itemCode);
+            return Items.Any(x => x.ItemCode == itemCode);
         }
     }
 
