@@ -24,7 +24,7 @@ namespace MicroRuleEngine
 
         public Func<T, bool> CompileRule<T>(Rule r)
         {
-            ParameterExpression paramUser = Expression.Parameter(typeof (T));
+            ParameterExpression paramUser = Expression.Parameter(typeof(T));
             Expression expr = GetExpressionForRule<T>(r, paramUser);
 
             return Expression.Lambda<Func<T, bool>>(expr, paramUser).Compile();
@@ -41,7 +41,7 @@ namespace MicroRuleEngine
 
         public Func<T, bool> CompileRules<T>(IList<Rule> rules)
         {
-            ParameterExpression paramUser = Expression.Parameter(typeof (T));
+            ParameterExpression paramUser = Expression.Parameter(typeof(T));
             Expression expr = BuildNestedExpression<T>(rules, paramUser, ExpressionType.And);
             return Expression.Lambda<Func<T, bool>>(expr, paramUser).Compile();
         }
@@ -73,41 +73,31 @@ namespace MicroRuleEngine
                     break;
             }
 
+            return BuildExpression(expressions, methodExp);
+        }
+
+        private static Expression BuildExpression(IList<Expression> expressions, Func<Expression, Expression, Expression> method)
+        {
             if (expressions.Count == 1)
                 return expressions[0];
 
-            Expression exp = methodExp(expressions[0], expressions[1]);
+            Expression exp = method(expressions[0], expressions[1]);
+
             for (int i = 2; expressions.Count > i; i++)
             {
-                exp = methodExp(exp, expressions[i]);
+                exp = method(exp, expressions[i]);
             }
             return exp;
         }
 
         private Expression AndExpressions(IList<Expression> expressions)
         {
-            if (expressions.Count == 1)
-                return expressions[0];
-
-            Expression exp = Expression.And(expressions[0], expressions[1]);
-            for (int i = 2; expressions.Count > i; i++)
-            {
-                exp = Expression.And(exp, expressions[i]);
-            }
-            return exp;
+            return BuildExpression(expressions, Expression.And);
         }
 
         private Expression OrExpressions(IList<Expression> expressions)
         {
-            if (expressions.Count == 1)
-                return expressions[0];
-
-            Expression exp = Expression.Or(expressions[0], expressions[1]);
-            for (int i = 2; expressions.Count > i; i++)
-            {
-                exp = Expression.Or(exp, expressions[i]);
-            }
-            return exp;
+            return BuildExpression(expressions, Expression.Or);
         }
 
         private static Expression BuildExpr<T>(Rule r, Expression param)
@@ -124,8 +114,8 @@ namespace MicroRuleEngine
             else if (r.MemberName.Contains('.')) //Child property
             {
                 String[] childProperties = r.MemberName.Split('.');
-                PropertyInfo property = typeof (T).GetProperty(childProperties[0]);
-                ParameterExpression paramExp = Expression.Parameter(typeof (T), "SomeObject");
+                PropertyInfo property = typeof(T).GetProperty(childProperties[0]);
+                ParameterExpression paramExp = Expression.Parameter(typeof(T), "SomeObject");
 
                 propExpression = Expression.PropertyOrField(param, childProperties[0]);
                 for (int i = 1; i < childProperties.Length; i++)
@@ -152,7 +142,7 @@ namespace MicroRuleEngine
             if (r.Operator == "IsMatch")
             {
                 return Expression.Call(
-                    typeof (Regex).GetMethod("IsMatch",
+                    typeof(Regex).GetMethod("IsMatch",
                                              new[]
                                                  {
                                                      typeof (string),
@@ -160,8 +150,8 @@ namespace MicroRuleEngine
                                                      typeof (RegexOptions)
                                                  }),
                     propExpression,
-                    Expression.Constant(r.TargetValue, typeof (string)),
-                    Expression.Constant(RegexOptions.IgnoreCase, typeof (RegexOptions))
+                    Expression.Constant(r.TargetValue, typeof(string)),
+                    Expression.Constant(RegexOptions.IgnoreCase, typeof(RegexOptions))
                     );
             }
             //Invoke a method on the Property
