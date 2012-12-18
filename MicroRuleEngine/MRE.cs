@@ -9,6 +9,9 @@ namespace MicroRuleEngine
 {
     public class MRE
     {
+        private const string StrIsMatch = "IsMatch";
+        private const string StrNull = "null";
+
         private readonly ExpressionType[] _nestedOperators = new[]
                                                                  {
                                                                      ExpressionType.And,
@@ -24,7 +27,7 @@ namespace MicroRuleEngine
 
         public Func<T, bool> Evaluate<T>(Rule r)
         {
-            ParameterExpression paramUser = Expression.Parameter(typeof (T));
+            ParameterExpression paramUser = Expression.Parameter(typeof(T));
             Expression expr = GetExpressionForRule<T>(r, paramUser);
 
             return Expression.Lambda<Func<T, bool>>(expr, paramUser).Compile();
@@ -32,7 +35,7 @@ namespace MicroRuleEngine
 
         public Func<T, bool> Evaluate<T>(IList<Rule> rules)
         {
-            ParameterExpression paramUser = Expression.Parameter(typeof (T));
+            ParameterExpression paramUser = Expression.Parameter(typeof(T));
             Expression expr = BuildNestedExpression<T>(rules, paramUser, ExpressionType.And);
             return Expression.Lambda<Func<T, bool>>(expr, paramUser).Compile();
         }
@@ -104,8 +107,8 @@ namespace MicroRuleEngine
 
         private static Expression BuildExpr<T>(Rule r, Expression param)
         {
-            Expression propExpression = null;
-            Type propType = null;
+            Expression propExpression;
+            Type propType;
 
             ExpressionType tBinary;
             if (string.IsNullOrEmpty(r.MemberName)) //check is against the object itself
@@ -116,13 +119,15 @@ namespace MicroRuleEngine
             else if (r.MemberName.Contains('.')) //Child property
             {
                 String[] childProperties = r.MemberName.Split('.');
-                PropertyInfo property = typeof (T).GetProperty(childProperties[0]);
-                ParameterExpression paramExp = Expression.Parameter(typeof (T), "SomeObject");
+                PropertyInfo property = typeof(T).GetProperty(childProperties[0]);
+                // not being used?
+                // ParameterExpression paramExp = Expression.Parameter(typeof(T), "SomeObject");
 
                 propExpression = Expression.PropertyOrField(param, childProperties[0]);
                 for (int i = 1; i < childProperties.Length; i++)
                 {
-                    PropertyInfo orig = property;
+                    // not being used?
+                    // PropertyInfo orig = property;
                     property = property.PropertyType.GetProperty(childProperties[i]);
                     if (property != null)
                         propExpression = Expression.PropertyOrField(propExpression, childProperties[i]);
@@ -141,10 +146,10 @@ namespace MicroRuleEngine
                 Expression right = StringToExpression(r.TargetValue, propType);
                 return Expression.MakeBinary(tBinary, propExpression, right);
             }
-            if (r.Operator == "IsMatch")
+            if (r.Operator == StrIsMatch)
             {
                 return Expression.Call(
-                    typeof (Regex).GetMethod("IsMatch",
+                    typeof(Regex).GetMethod(StrIsMatch,
                                              new[]
                                                  {
                                                      typeof (string),
@@ -152,8 +157,8 @@ namespace MicroRuleEngine
                                                      typeof (RegexOptions)
                                                  }),
                     propExpression,
-                    Expression.Constant(r.TargetValue, typeof (string)),
-                    Expression.Constant(RegexOptions.IgnoreCase, typeof (RegexOptions))
+                    Expression.Constant(r.TargetValue, typeof(string)),
+                    Expression.Constant(RegexOptions.IgnoreCase, typeof(RegexOptions))
                     );
             }
             //Invoke a method on the Property
@@ -167,7 +172,7 @@ namespace MicroRuleEngine
 
         private static Expression StringToExpression(string value, Type propType)
         {
-            return value.ToLower() == "null"
+            return value.ToLower() == StrNull
                        ? Expression.Constant(null)
                        : Expression.Constant(propType.IsEnum
                                                  ? Enum.Parse(propType, value)
