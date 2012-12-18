@@ -8,7 +8,13 @@ namespace MicroRuleEngine
 {
     public class MRE
     {
-        private readonly ExpressionType[] _nestedOperators = new[] { ExpressionType.And, ExpressionType.AndAlso, ExpressionType.Or, ExpressionType.OrElse };
+        private readonly ExpressionType[] _nestedOperators = new[]
+                                                                 {
+                                                                     ExpressionType.And,
+                                                                     ExpressionType.AndAlso,
+                                                                     ExpressionType.Or,
+                                                                     ExpressionType.OrElse
+                                                                 };
 
         public bool PassesRules<T>(IList<Rule> rules, T toInspect)
         {
@@ -49,7 +55,7 @@ namespace MicroRuleEngine
 
         static Expression BinaryExpression(IList<Expression> expressions, ExpressionType operationType)
         {
-            Func<Expression, Expression, Expression> methodExp = Expression.And;
+            Func<Expression, Expression, Expression> methodExp;
             switch (operationType)
             {
                 case ExpressionType.Or:
@@ -60,6 +66,9 @@ namespace MicroRuleEngine
                     break;
                 case ExpressionType.AndAlso:
                     methodExp = Expression.AndAlso;
+                    break;
+                default:
+                    methodExp = Expression.And;
                     break;
             }
 
@@ -103,12 +112,12 @@ namespace MicroRuleEngine
             Type propType = null;
 
             ExpressionType tBinary;
-            if (string.IsNullOrEmpty(r.MemberName))//check is against the object itself
+            if (string.IsNullOrEmpty(r.MemberName)) //check is against the object itself
             {
                 propExpression = param;
                 propType = propExpression.Type;
             }
-            else if (r.MemberName.Contains('.'))//Child property
+            else if (r.MemberName.Contains('.')) //Child property
             {
                 String[] childProperties = r.MemberName.Split('.');
                 var property = typeof(T).GetProperty(childProperties[0]);
@@ -124,7 +133,7 @@ namespace MicroRuleEngine
                 }
                 propType = propExpression.Type;
             }
-            else//Property
+            else //Property
             {
                 propExpression = Expression.PropertyOrField(param, r.MemberName);
                 propType = propExpression.Type;
@@ -140,7 +149,12 @@ namespace MicroRuleEngine
             {
                 return Expression.Call(
                     typeof(Regex).GetMethod("IsMatch",
-                                            new[] { typeof(string), typeof(string), typeof(RegexOptions) }),
+                                             new[]
+                                                 {
+                                                     typeof (string),
+                                                     typeof (string),
+                                                     typeof (RegexOptions)
+                                                 }),
                     propExpression,
                     Expression.Constant(r.TargetValue, typeof(string)),
                     Expression.Constant(RegexOptions.IgnoreCase, typeof(RegexOptions))
@@ -155,7 +169,7 @@ namespace MicroRuleEngine
             return Expression.Call(propExpression, r.Operator, inputs, expressions);
         }
 
-        private static Expression StringToExpression(string value, Type propType)
+        static Expression StringToExpression(string value, Type propType)
         {
             return value.ToLower() == "null"
                        ? Expression.Constant(null)
