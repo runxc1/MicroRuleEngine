@@ -19,12 +19,12 @@ namespace MicroRuleEngine
 
         public bool PassesRules<T>(IList<Rule> rules, T toInspect)
         {
-            return CompileRules<T>(rules).Invoke(toInspect);
+            return Evaluate<T>(rules).Invoke(toInspect);
         }
 
-        public Func<T, bool> CompileRule<T>(Rule r)
+        public Func<T, bool> Evaluate<T>(Rule r)
         {
-            ParameterExpression paramUser = Expression.Parameter(typeof(T));
+            ParameterExpression paramUser = Expression.Parameter(typeof (T));
             Expression expr = GetExpressionForRule<T>(r, paramUser);
 
             return Expression.Lambda<Func<T, bool>>(expr, paramUser).Compile();
@@ -39,14 +39,15 @@ namespace MicroRuleEngine
                        : BuildExpr<T>(r, param);
         }
 
-        public Func<T, bool> CompileRules<T>(IList<Rule> rules)
+        public Func<T, bool> Evaluate<T>(IList<Rule> rules)
         {
-            ParameterExpression paramUser = Expression.Parameter(typeof(T));
+            ParameterExpression paramUser = Expression.Parameter(typeof (T));
             Expression expr = BuildNestedExpression<T>(rules, paramUser, ExpressionType.And);
             return Expression.Lambda<Func<T, bool>>(expr, paramUser).Compile();
         }
 
-        private Expression BuildNestedExpression<T>(IEnumerable<Rule> rules, ParameterExpression param,
+        private Expression BuildNestedExpression<T>(IEnumerable<Rule> rules,
+                                                    ParameterExpression param,
                                                     ExpressionType operation)
         {
             List<Expression> expressions = rules.Select(r => GetExpressionForRule<T>(r, param)).ToList();
@@ -76,7 +77,8 @@ namespace MicroRuleEngine
             return BuildExpression(expressions, methodExp);
         }
 
-        private static Expression BuildExpression(IList<Expression> expressions, Func<Expression, Expression, Expression> method)
+        private static Expression BuildExpression(IList<Expression> expressions,
+                                                  Func<Expression, Expression, Expression> method)
         {
             if (expressions.Count == 1)
                 return expressions[0];
@@ -114,8 +116,8 @@ namespace MicroRuleEngine
             else if (r.MemberName.Contains('.')) //Child property
             {
                 String[] childProperties = r.MemberName.Split('.');
-                PropertyInfo property = typeof(T).GetProperty(childProperties[0]);
-                ParameterExpression paramExp = Expression.Parameter(typeof(T), "SomeObject");
+                PropertyInfo property = typeof (T).GetProperty(childProperties[0]);
+                ParameterExpression paramExp = Expression.Parameter(typeof (T), "SomeObject");
 
                 propExpression = Expression.PropertyOrField(param, childProperties[0]);
                 for (int i = 1; i < childProperties.Length; i++)
@@ -142,7 +144,7 @@ namespace MicroRuleEngine
             if (r.Operator == "IsMatch")
             {
                 return Expression.Call(
-                    typeof(Regex).GetMethod("IsMatch",
+                    typeof (Regex).GetMethod("IsMatch",
                                              new[]
                                                  {
                                                      typeof (string),
@@ -150,8 +152,8 @@ namespace MicroRuleEngine
                                                      typeof (RegexOptions)
                                                  }),
                     propExpression,
-                    Expression.Constant(r.TargetValue, typeof(string)),
-                    Expression.Constant(RegexOptions.IgnoreCase, typeof(RegexOptions))
+                    Expression.Constant(r.TargetValue, typeof (string)),
+                    Expression.Constant(RegexOptions.IgnoreCase, typeof (RegexOptions))
                     );
             }
             //Invoke a method on the Property

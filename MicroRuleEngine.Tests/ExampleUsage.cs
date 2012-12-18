@@ -23,7 +23,7 @@ namespace MicroRuleEngine.Tests
                                 TargetValue = "AUS"
                             };
             MRE engine = new MRE();
-            var compiledRule = engine.CompileRule<Order>(rule);
+            var compiledRule = engine.Evaluate<Order>(rule);
             bool passes = compiledRule(order);
             Assert.IsTrue(passes);
 
@@ -54,7 +54,7 @@ namespace MicroRuleEngine.Tests
                 }
                             };
             MRE engine = new MRE();
-            var fakeName = engine.CompileRule<Order>(rule);
+            var fakeName = engine.Evaluate<Order>(rule);
             bool passes = fakeName(order);
             Assert.IsTrue(passes);
 
@@ -73,7 +73,7 @@ namespace MicroRuleEngine.Tests
                                 Inputs = new List<object> { "Test" }
                             };
             MRE engine = new MRE();
-            var boolMethod = engine.CompileRule<Order>(rule);
+            var boolMethod = engine.Evaluate<Order>(rule);
             bool passes = boolMethod(order);
             Assert.IsTrue(passes);
 
@@ -94,7 +94,7 @@ namespace MicroRuleEngine.Tests
                                 Inputs = new List<object> { "ohn" }
                             };
             MRE engine = new MRE();
-            var childPropCheck = engine.CompileRule<Order>(rule);
+            var childPropCheck = engine.Evaluate<Order>(rule);
             bool passes = childPropCheck(order);
             Assert.IsTrue(passes);
 
@@ -113,7 +113,7 @@ namespace MicroRuleEngine.Tests
                                 TargetValue = @"^[a-zA-Z0-9]*$"
                             };
             MRE engine = new MRE();
-            var regexCheck = engine.CompileRule<Order>(rule);
+            var regexCheck = engine.Evaluate<Order>(rule);
             bool passes = regexCheck(order);
             Assert.IsTrue(passes);
 
