@@ -19,18 +19,22 @@ namespace MicroRuleEngine.Tests.Models
             return this.Items.Any(x => x.ItemCode == itemCode);
         }
     }
-    public class Item{
-        public decimal Cost{get;set;}
-        public string ItemCode{get;set;}
+
+    public class Item
+    {
+        public decimal Cost { get; set; }
+        public string ItemCode { get; set; }
     }
 
     public class Customer
     {
-        public string FirstName {get;set;}
+        public string FirstName { get; set; }
         public string LastName { get; set; }
-        public Country Country {get;set;}
+        public Country Country { get; set; }
     }
-    public class Country{
-        public string CountryCode{get;set;}
+
+    public class Country
+    {
+        public string CountryCode { get; set; }
     }
 }

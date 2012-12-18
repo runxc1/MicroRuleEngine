@@ -157,9 +157,11 @@ namespace MicroRuleEngine
 
         private static Expression StringToExpression(string value, Type propType)
         {
-            return Expression.Constant(value.ToLower() == "null" 
-                ? null 
-                : Convert.ChangeType(value, propType));
+            return value.ToLower() == "null"
+                       ? Expression.Constant(null)
+                       : Expression.Constant(propType.IsEnum
+                                                 ? Enum.Parse(propType, value)
+                                                 : Convert.ChangeType(value, propType));
         }
     }
 
