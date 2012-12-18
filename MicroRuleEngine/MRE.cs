@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Linq.Expressions;
 using System.Text.RegularExpressions;
 
@@ -9,11 +8,11 @@ namespace MicroRuleEngine
 {
     public class MRE
     {
-        private ExpressionType[] nestedOperators = new ExpressionType[] { ExpressionType.And, ExpressionType.AndAlso, ExpressionType.Or, ExpressionType.OrElse };
+        private readonly ExpressionType[] _nestedOperators = new[] { ExpressionType.And, ExpressionType.AndAlso, ExpressionType.Or, ExpressionType.OrElse };
 
         public bool PassesRules<T>(IList<Rule> rules, T toInspect)
         {
-            return this.CompileRules<T>(rules).Invoke(toInspect);
+            return CompileRules<T>(rules).Invoke(toInspect);
         }
 
         public Func<T, bool> CompileRule<T>(Rule r)
@@ -27,10 +26,10 @@ namespace MicroRuleEngine
         Expression GetExpressionForRule<T>(Rule r, ParameterExpression param)
         {
             ExpressionType nestedOperator;
-            if (ExpressionType.TryParse(r.Operator, out nestedOperator) && nestedOperators.Contains(nestedOperator) && r.Rules != null && r.Rules.Any())
-                return BuildNestedExpression<T>(r.Rules, param, nestedOperator);
-            else
-                return BuildExpr<T>(r, param);
+            return Enum.TryParse(r.Operator, out nestedOperator) && _nestedOperators.Contains(nestedOperator) &&
+                   r.Rules != null && r.Rules.Any()
+                       ? BuildNestedExpression<T>(r.Rules, param, nestedOperator)
+                       : BuildExpr<T>(r, param);
         }
 
         public Func<T, bool> CompileRules<T>(IList<Rule> rules)
@@ -40,31 +39,27 @@ namespace MicroRuleEngine
             return Expression.Lambda<Func<T, bool>>(expr, paramUser).Compile();
         }
 
-        Expression BuildNestedExpression<T>(IList<Rule> rules, ParameterExpression param, ExpressionType operation)
+        Expression BuildNestedExpression<T>(IEnumerable<Rule> rules, ParameterExpression param, ExpressionType operation)
         {
-            List<Expression> expressions = new List<Expression>();
-            foreach (var r in rules)
-            {
-                expressions.Add(GetExpressionForRule<T>(r,param));
-            }
+            List<Expression> expressions = rules.Select(r => GetExpressionForRule<T>(r, param)).ToList();
 
             Expression expr = BinaryExpression(expressions, operation);
             return expr;
         }
 
-        Expression BinaryExpression(IList<Expression> expressions, ExpressionType operationType)
+        static Expression BinaryExpression(IList<Expression> expressions, ExpressionType operationType)
         {
-            Func<Expression, Expression, Expression> methodExp = new Func<Expression, Expression, Expression>((x1, x2) => Expression.And(x1, x2));
+            Func<Expression, Expression, Expression> methodExp = Expression.And;
             switch (operationType)
             {
                 case ExpressionType.Or:
-                    methodExp = new Func<Expression, Expression, Expression>((x1, x2) => Expression.Or(x1, x2));
+                    methodExp = Expression.Or;
                     break;
                 case ExpressionType.OrElse:
-                    methodExp = new Func<Expression, Expression, Expression>((x1, x2) => Expression.OrElse(x1, x2));
+                    methodExp = Expression.OrElse;
                     break;
                 case ExpressionType.AndAlso:
-                    methodExp = new Func<Expression, Expression, Expression>((x1, x2) => Expression.AndAlso(x1, x2));
+                    methodExp = Expression.AndAlso;
                     break;
             }
 
@@ -102,7 +97,7 @@ namespace MicroRuleEngine
             return exp;
         }
 
-        Expression BuildExpr<T>(Rule r, ParameterExpression param)
+        static Expression BuildExpr<T>(Rule r, Expression param)
         {
             Expression propExpression = null;
             Type propType = null;
@@ -136,44 +131,35 @@ namespace MicroRuleEngine
             }
 
             // is the operator a known .NET operator?
-            if (ExpressionType.TryParse(r.Operator, out tBinary))
+            if (Enum.TryParse(r.Operator, out tBinary))
             {
-                var right = this.StringToExpression(r.TargetValue, propType);
+                var right = StringToExpression(r.TargetValue, propType);
                 return Expression.MakeBinary(tBinary, propExpression, right);
             }
-            else if (r.Operator == "IsMatch")
+            if (r.Operator == "IsMatch")
             {
                 return Expression.Call(
                     typeof(Regex).GetMethod("IsMatch",
-                        new[] { typeof(string), typeof(string), typeof(RegexOptions) }),
+                                            new[] { typeof(string), typeof(string), typeof(RegexOptions) }),
                     propExpression,
                     Expression.Constant(r.TargetValue, typeof(string)),
                     Expression.Constant(RegexOptions.IgnoreCase, typeof(RegexOptions))
-                );
+                    );
             }
-            else //Invoke a method on the Property
-            {
-                var inputs = r.Inputs.Select(x=> x.GetType()).ToArray();
-                var methodInfo = propType.GetMethod(r.Operator, inputs);
-                if (!methodInfo.IsGenericMethod)
-                    inputs = null;//Only pass in type information to a Generic Method
-                var expressions = r.Inputs.Select(x => Expression.Constant(x)).ToArray();
-                return Expression.Call(propExpression, r.Operator,inputs,expressions);
-            }
+            //Invoke a method on the Property
+            var inputs = r.Inputs.Select(x => x.GetType()).ToArray();
+            var methodInfo = propType.GetMethod(r.Operator, inputs);
+            if (!methodInfo.IsGenericMethod)
+                inputs = null;//Only pass in type information to a Generic Method
+            var expressions = r.Inputs.Select(Expression.Constant).ToArray();
+            return Expression.Call(propExpression, r.Operator, inputs, expressions);
         }
 
-        private Expression StringToExpression(string value, Type propType)
+        private static Expression StringToExpression(string value, Type propType)
         {
-            ConstantExpression right = null;
-            if (value.ToLower() == "null")
-            {
-                right = Expression.Constant(null);
-            }
-            else
-            {
-                right = Expression.Constant(Convert.ChangeType(value, propType));
-            }
-            return right;
+            return Expression.Constant(value.ToLower() == "null" 
+                ? null 
+                : Convert.ChangeType(value, propType));
         }
     }
 
