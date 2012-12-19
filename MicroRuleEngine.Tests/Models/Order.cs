@@ -3,36 +3,26 @@ using System.Linq;
 
 namespace MicroRuleEngine.Tests.Models
 {
-    public class Order
+    public class Order :
+        IVisitable<Order>
     {
         public Order()
         {
             Items = new List<Item>();
         }
+
         public int OrderId { get; set; }
         public Customer Customer { get; set; }
         public List<Item> Items { get; set; }
+
         public bool HasItem(string itemCode)
         {
             return Items.Any(x => x.ItemCode == itemCode);
         }
-    }
 
-    public class Item
-    {
-        public decimal Cost { get; set; }
-        public string ItemCode { get; set; }
-    }
-
-    public class Customer
-    {
-        public string FirstName { get; set; }
-        public string LastName { get; set; }
-        public Country Country { get; set; }
-    }
-
-    public class Country
-    {
-        public string CountryCode { get; set; }
+        public void Accept(IVisitor<Order> visitor)
+        {
+            visitor.Visit(this);
+        }
     }
 }
