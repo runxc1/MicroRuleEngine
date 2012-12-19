@@ -17,7 +17,7 @@ namespace MicroRuleEngine.Tests.Models
         public void Visit(Item element)
         {
             if (_rule(element))
-                _rebate = _rebate + (element.Cost * (decimal)0.1);
+                _rebate = _rebate + (element.Cost * 0.1M);
         }
     }
 }
