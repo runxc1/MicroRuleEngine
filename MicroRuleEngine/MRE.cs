@@ -9,16 +9,10 @@ namespace MicroRuleEngine
 {
     public class MRE
     {
-        private const string StrIsMatch = "IsMatch";
-        private const string StrNull = "null";
-
-        private readonly ExpressionType[] _nestedOperators = new[]
-                                                                 {
-                                                                     ExpressionType.And,
-                                                                     ExpressionType.AndAlso,
-                                                                     ExpressionType.Or,
-                                                                     ExpressionType.OrElse
-                                                                 };
+        public static MRE Instance
+        {
+            get { return _instance ?? (_instance = new MRE()); }
+        }
 
         public bool PassesRules<T>(IList<Rule> rules, T toInspect)
         {
@@ -39,6 +33,23 @@ namespace MicroRuleEngine
             Expression expr = BuildNestedExpression<T>(rules, paramUser, ExpressionType.And);
             return Expression.Lambda<Func<T, bool>>(expr, paramUser).Compile();
         }
+
+        private MRE()
+        { }
+
+        private static MRE _instance;
+
+        private const string StrIsMatch = "IsMatch";
+
+        private const string StrNull = "null";
+
+        private readonly ExpressionType[] _nestedOperators = new[]
+                                                                     {
+                                                                         ExpressionType.And,
+                                                                         ExpressionType.AndAlso,
+                                                                         ExpressionType.Or,
+                                                                         ExpressionType.OrElse
+                                                                     };
 
         private Expression GetExpressionForRule<T>(Rule r, ParameterExpression param)
         {
@@ -146,11 +157,11 @@ namespace MicroRuleEngine
                 return Expression.Call(
                     typeof(Regex).GetMethod(StrIsMatch,
                                              new[]
-                                                 {
-                                                     typeof (string),
-                                                     typeof (string),
-                                                     typeof (RegexOptions)
-                                                 }),
+                                                     {
+                                                         typeof (string),
+                                                         typeof (string),
+                                                         typeof (RegexOptions)
+                                                     }),
                     propExpression,
                     Expression.Constant(r.TargetValue, typeof(string)),
                     Expression.Constant(RegexOptions.IgnoreCase, typeof(RegexOptions))
