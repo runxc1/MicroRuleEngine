@@ -11,5 +11,15 @@
         {
             visitor.Visit(this);
         }
+
+        public static Customer Make(string firstName, string lastName, string countryCode)
+        {
+            return new Customer
+                       {
+                           FirstName = firstName,
+                           LastName = lastName,
+                           Country = Country.Make(countryCode)
+                       };
+        }
     }
 }

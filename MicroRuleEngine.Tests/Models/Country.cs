@@ -9,5 +9,13 @@
         {
             visitor.Visit(this);
         }
+
+        public static Country Make(string countryCode)
+        {
+            return new Country
+                       {
+                           CountryCode = countryCode
+                       };
+        }
     }
 }

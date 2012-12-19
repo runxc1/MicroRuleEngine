@@ -22,8 +22,7 @@ namespace MicroRuleEngine.Tests
                                 Operator = ExpressionType.Equal.ToString("g"),
                                 TargetValue = "AUS"
                             };
-            MRE engine = MRE.Instance;
-            var compiledRule = engine.Compile<Order>(rule);
+            var compiledRule = MRE.Instance.Compile<Order>(rule);
             bool passes = compiledRule(order);
             Assert.IsTrue(passes);
 
@@ -39,22 +38,37 @@ namespace MicroRuleEngine.Tests
             Rule rule = new Rule
                             {
                                 Operator = ExpressionType.AndAlso.ToString("g"),
-                                Rules = new List<Rule>
-                                            {
-                    new Rule { MemberName = "Customer.LastName", TargetValue = "Doe", Operator = "Equal"},
-                    new Rule
-                        { 
-                        Operator = "Or",
-                        Rules = new List<Rule>
-                                    {
-                            new Rule { MemberName = "Customer.FirstName", TargetValue = "John", Operator = "Equal"},
-                            new Rule { MemberName = "Customer.FirstName", TargetValue = "Jane", Operator = "Equal"}
-                        }
-                    }
-                }
+                                Rules =
+                                    new List<Rule>
+                                        {
+                                            new Rule
+                                                {
+                                                    MemberName = "Customer.LastName",
+                                                    TargetValue = "Doe",
+                                                    Operator = "Equal"
+                                                },
+                                            new Rule
+                                                {
+                                                    Operator = "Or",
+                                                    Rules = new List<Rule>
+                                                                {
+                                                                    new Rule
+                                                                        {
+                                                                            MemberName = "Customer.FirstName",
+                                                                            TargetValue = "John",
+                                                                            Operator = "Equal"
+                                                                        },
+                                                                    new Rule
+                                                                        {
+                                                                            MemberName = "Customer.FirstName",
+                                                                            TargetValue = "Jane",
+                                                                            Operator = "Equal"
+                                                                        }
+                                                                }
+                                                }
+                                        }
                             };
-            MRE engine = MRE.Instance;
-            var fakeName = engine.Compile<Order>(rule);
+            var fakeName = MRE.Instance.Compile<Order>(rule);
             bool passes = fakeName(order);
             Assert.IsTrue(passes);
 
@@ -72,8 +86,7 @@ namespace MicroRuleEngine.Tests
                                 Operator = "HasItem", //The Order Object Contains a method named 'HasItem' that returns true/false
                                 Inputs = new List<object> { "Test" }
                             };
-            MRE engine = MRE.Instance;
-            var boolMethod = engine.Compile<Order>(rule);
+            var boolMethod = MRE.Instance.Compile<Order>(rule);
             bool passes = boolMethod(order);
             Assert.IsTrue(passes);
 
@@ -93,8 +106,7 @@ namespace MicroRuleEngine.Tests
                                 Operator = "EndsWith", //Regular method that exists on string.. As a note expression methods are not available
                                 Inputs = new List<object> { "ohn" }
                             };
-            MRE engine = MRE.Instance;
-            var childPropCheck = engine.Compile<Order>(rule);
+            var childPropCheck = MRE.Instance.Compile<Order>(rule);
             bool passes = childPropCheck(order);
             Assert.IsTrue(passes);
 
@@ -112,8 +124,7 @@ namespace MicroRuleEngine.Tests
                                 Operator = "IsMatch",
                                 TargetValue = @"^[a-zA-Z0-9]*$"
                             };
-            MRE engine = MRE.Instance;
-            var regexCheck = engine.Compile<Order>(rule);
+            var regexCheck = MRE.Instance.Compile<Order>(rule);
             bool passes = regexCheck(order);
             Assert.IsTrue(passes);
 
@@ -124,26 +135,17 @@ namespace MicroRuleEngine.Tests
 
         public Order GetOrder()
         {
-            Order order = new Order
-                              {
-                                  OrderId = 1,
-                                  Customer = new Customer
-                                                 {
-                                                     FirstName = "John",
-                                                     LastName = "Doe",
-                                                     Country = new Country
-                                                                   {
-                                                                       CountryCode = "AUS"
-                                                                   }
-                                                 },
-                                  Items = new List<Item>
-                                              {
-                                                  new Item {ItemCode = "MM23", Cost = 5.25M},
-                                                  new Item {ItemCode = "LD45", Cost = 5.25M},
-                                                  new Item {ItemCode = "Test", Cost = 3.33M},
-                                              }
-                              };
-            return order;
+            return new Order
+                       {
+                           OrderId = 1,
+                           Customer = Customer.Make("John", "Doe", "AUS"),
+                           Items = new List<Item>
+                                       {
+                                           Item.Make("MM23", 5.25M),
+                                           Item.Make("LD45", 5.25M),
+                                           Item.Make("Test", 3.33M),
+                                       }
+                       };
         }
     }
 }

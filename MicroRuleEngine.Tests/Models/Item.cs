@@ -10,5 +10,10 @@
         {
             visitor.Visit(this);
         }
+
+        public static Item Make(string itemCode, decimal cost)
+        {
+            return new Item { ItemCode = itemCode, Cost = cost };
+        }
     }
 }
