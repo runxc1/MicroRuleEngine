@@ -41,6 +41,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="MRE.cs" />
+    <Compile Include="RuleCompiler.cs" />
+    <Compile Include="ExpressionBuilder.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Rule.cs" />
     <Compile Include="RuleValue.cs" />

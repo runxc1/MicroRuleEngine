@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 
 namespace MicroRuleEngine
 {
@@ -6,13 +7,13 @@ namespace MicroRuleEngine
     {
         public Rule()
         {
-            Inputs = new List<object>();
+            Inputs = Enumerable.Empty<object>();
         }
 
         public string MemberName { get; set; }
         public string Operator { get; set; }
         public string TargetValue { get; set; }
-        public List<Rule> Rules { get; set; }
-        public List<object> Inputs { get; set; }
+        public IEnumerable<Rule> Rules { get; set; }
+        public IEnumerable<object> Inputs { get; set; }
     }
 }
