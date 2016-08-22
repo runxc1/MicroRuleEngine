@@ -13,6 +13,21 @@ namespace MicroRuleEngine.Tests
     public class ExampleUsage
     {
         [TestMethod]
+        public void ChildPropertiesOfNull()
+        {
+            Order order = GetOrder();
+            order.Customer = null;
+            Rule rule = new Rule
+            {
+                MemberName = "Customer.Country.CountryCode",
+                Operator = ExpressionType.Equal.ToString("g"),
+                TargetValue = "AUS"
+            };
+            var compiledRule = MRE.Instance.Compile<Order>(rule);
+            bool passes = compiledRule(order);
+            Assert.IsFalse(passes);
+        }
+        [TestMethod]
         public void ChildProperties()
         {
             Order order = GetOrder();
@@ -112,6 +127,22 @@ namespace MicroRuleEngine.Tests
 
             order.Customer.FirstName = "jane";
             passes = childPropCheck(order);
+            Assert.IsFalse(passes);
+        }
+
+        [TestMethod]
+        public void ChildPropertyOfNullBooleanMethods()
+        {
+            Order order = GetOrder();
+            order.Customer = null;
+            Rule rule = new Rule
+            {
+                MemberName = "Customer.FirstName",
+                Operator = "EndsWith", //Regular method that exists on string.. As a note expression methods are not available
+                Inputs = new List<object> { "ohn" }
+            };
+            var childPropCheck = MRE.Instance.Compile<Order>(rule);
+            bool passes = childPropCheck(order);
             Assert.IsFalse(passes);
         }
 
