@@ -9,8 +9,12 @@ namespace MicroRuleEngine
     internal static class ExpressionBuilder
     {
         private const string StrIsMatch = "IsMatch";
-
         private const string StrNull = "null";
+        private static Type typeOfNullReferenceException = typeof(NullReferenceException);
+        private static Type typeOfBool = typeof(bool);
+        private static Type typeOfRegex = typeof(Regex);
+        private static Type typeOfString = typeof(string);
+        private static Type typeOfRegexOptions = typeof(RegexOptions);
 
         private static readonly ExpressionType[] NestedOperators =
         {
@@ -71,6 +75,7 @@ namespace MicroRuleEngine
             );
         }
 
+
         private static Expression BuildExpression<T>(Rule rule, Expression expression)
         {
             Expression propExpression;
@@ -105,6 +110,10 @@ namespace MicroRuleEngine
                 propType = propExpression.Type;
             }
 
+            propExpression = Expression.TryCatch(
+                Expression.Block(propExpression.Type, propExpression),
+                Expression.Catch(typeOfNullReferenceException, Expression.Default(propExpression.Type))
+            );
             ExpressionType tBinary;
             // is the operator a known .NET operator?
             if (Enum.TryParse(rule.Operator, out tBinary))
@@ -115,17 +124,17 @@ namespace MicroRuleEngine
             if (rule.Operator == StrIsMatch)
             {
                 return Expression.Call(
-                    typeof(Regex).GetMethod(StrIsMatch,
+                    typeOfRegex.GetMethod(StrIsMatch,
                         new[]
                         {
-                            typeof (string),
-                            typeof (string),
-                            typeof (RegexOptions)
+                            typeOfString,
+                            typeOfString,
+                            typeOfRegexOptions
                         }
                     ),
                     propExpression,
-                    Expression.Constant(rule.TargetValue, typeof(string)),
-                    Expression.Constant(RegexOptions.IgnoreCase, typeof(RegexOptions))
+                    Expression.Constant(rule.TargetValue, typeOfString),
+                    Expression.Constant(RegexOptions.IgnoreCase, typeOfRegexOptions)
                     );
             }
             //Invoke a method on the Property
@@ -134,7 +143,11 @@ namespace MicroRuleEngine
             if (!methodInfo.IsGenericMethod)
                 inputs = null; //Only pass in type information to a Generic Method
             var expressions = rule.Inputs.Select(Expression.Constant).ToArray();
-            return Expression.Call(propExpression, rule.Operator, inputs, expressions);
+
+            return Expression.TryCatch(
+                Expression.Block(typeOfBool, Expression.Call(propExpression, rule.Operator, inputs, expressions)),
+                Expression.Catch(typeOfNullReferenceException, Expression.Constant(false))
+            );
         }
 
         private static Expression StringToExpression(string value, Type propType)
