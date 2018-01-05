@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Text;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -17,7 +16,7 @@ namespace MicroRuleEngine.Tests
         [TestMethod]
         public void ChildProperties()
         {
-            Order order = this.GetOrder();
+            Order order = GetOrder();
             Rule rule = new Rule()
             {
                 MemberName = "Customer.Country.CountryCode",
@@ -35,9 +34,10 @@ namespace MicroRuleEngine.Tests
         }
 
         [TestMethod]
+
         public void ConditionalLogic()
         {
-            Order order = this.GetOrder();
+            Order order = GetOrder();
             Rule rule = new Rule()
             {
                 Operator = System.Linq.Expressions.ExpressionType.AndAlso.ToString("g"),
@@ -64,9 +64,10 @@ namespace MicroRuleEngine.Tests
         }
 
         [TestMethod]
+
         public void BooleanMethods()
         {
-            Order order = this.GetOrder();
+            Order order = GetOrder();
             Rule rule = new Rule()
             {
                 Operator = "HasItem",//The Order Object Contains a method named 'HasItem' that returns true/false
@@ -84,9 +85,10 @@ namespace MicroRuleEngine.Tests
         }
 
         [TestMethod]
+
         public void ChildPropertyBooleanMethods()
         {
-            Order order = this.GetOrder();
+            Order order = GetOrder();
             Rule rule = new Rule()
             { 
                 MemberName = "Customer.FirstName",
@@ -103,9 +105,10 @@ namespace MicroRuleEngine.Tests
             Assert.IsFalse(passes);
         }
 
+        [TestMethod]
         public void RegexIsMatch()//Had to add a Regex evaluator to make it feel 'Complete'
         {
-            Order order = this.GetOrder();
+            Order order = GetOrder();
             Rule rule = new Rule()
             {
                 MemberName = "Customer.FirstName",

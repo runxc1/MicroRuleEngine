@@ -14,3 +14,11 @@ content
 *.swx
 *.vsmdi
 *.testsettings
+/.vs
+/ConsoleApp1
+/packages
+/MicroRuleEngine.Tests.psess
+/ConsoleApp1.psess
+/ConsoleApp1-3.psess
+/ConsoleApp1-2.psess
+/ConsoleApp1-1.psess
