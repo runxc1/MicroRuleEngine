@@ -167,7 +167,7 @@ namespace MicroRuleEngine
 			}
 			else
 			{
-				right = Expression.Constant(Convert.ChangeType(value, propType), propType);
+				right = Expression.Constant(propType.IsEnum ? Enum.Parse(propType, value) : Convert.ChangeType(value, propType), propType);
 			}
 			return right;
 		}
