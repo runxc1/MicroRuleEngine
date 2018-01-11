@@ -26,6 +26,13 @@ namespace MicroRuleEngine
 			return Expression.Lambda<Func<T, bool>>(expr, paramUser).Compile();
 		}
 
+		public Func<T, bool> CompileRules<T>(IEnumerable<Rule> rules)
+		{
+			var paramUser = Expression.Parameter(typeof(T));
+			var expr = BuildNestedExpression<T>(rules, paramUser, ExpressionType.And);
+			return Expression.Lambda<Func<T, bool>>(expr, paramUser).Compile();
+		}
+
 		Expression GetExpressionForRule<T>(Rule r, ParameterExpression param)
 		{
 			ExpressionType nestedOperator;
@@ -33,13 +40,6 @@ namespace MicroRuleEngine
 				return BuildNestedExpression<T>(r.Rules, param, nestedOperator);
 			else
 				return BuildExpr<T>(r, param);
-		}
-
-		public Func<T, bool> CompileRules<T>(IEnumerable<Rule> rules)
-		{
-			var paramUser = Expression.Parameter(typeof(T));
-			var expr = BuildNestedExpression<T>(rules, paramUser, ExpressionType.And);
-			return Expression.Lambda<Func<T, bool>>(expr, paramUser).Compile();
 		}
 
 		Expression BuildNestedExpression<T>(IEnumerable<Rule> rules, ParameterExpression param, ExpressionType operation)
