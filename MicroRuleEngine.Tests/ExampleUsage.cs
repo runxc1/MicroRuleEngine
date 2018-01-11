@@ -85,6 +85,38 @@ namespace MicroRuleEngine.Tests
         }
 
         [TestMethod]
+                public void AnyOperator()
+                    {
+                        Order order = GetOrder();
+                        Rule rule = new Rule
+                        {
+                            MemberName = "Items", // The array property
+                            Operator = "Any",
+                            Rules = new List<Rule>()
+                            {
+                                new Rule
+                                {
+                                    MemberName = "ItemCode", // the property in the above array item
+                                    TargetValue = "Test",
+                                }
+                            }
+                        };
+                        MRE engine = new MRE();
+
+            var boolMethod = engine.CompileRule<Order>(rule);
+                        bool passes = boolMethod(order);
+                        Assert.IsTrue(passes);
+            
+                            var item = order.Items.First(x => x.ItemCode == "Test");
+                        item.ItemCode = "Changed";
+                        passes = boolMethod(order);
+                        Assert.IsFalse(passes);
+                    }
+    
+
+
+
+        [TestMethod]
 
         public void ChildPropertyBooleanMethods()
         {
@@ -139,11 +171,12 @@ namespace MicroRuleEngine.Tests
                         CountryCode = "AUS"
                     }
                 },
-                Items = new List<Item>(){
-                    new Item(){ ItemCode = "MM23", Cost=5.25M},
-                    new Item(){ ItemCode = "LD45", Cost=5.25M},
-                    new Item(){ ItemCode = "Test", Cost=3.33M},
-                }
+                Items = new List<Item>()
+                {
+                    new Item() {ItemCode = "MM23", Cost = 5.25M},
+                    new Item() {ItemCode = "LD45", Cost = 5.25M},
+                    new Item() {ItemCode = "Test", Cost = 3.33M},
+                },
             };
             return order;
         }

@@ -42,13 +42,9 @@ namespace MicroRuleEngine
             return Expression.Lambda<Func<T, bool>>(expr, paramUser).Compile();
         }
 
-        Expression BuildNestedExpression<T>(IList<Rule> rules, ParameterExpression param, ExpressionType operation)
+        Expression BuildNestedExpression<T>(IEnumerable<Rule> rules, ParameterExpression param, ExpressionType operation)
         {
-            List<Expression> expressions = new List<Expression>(rules.Count);
-            foreach (var r in rules)
-            {
-                expressions.Add(GetExpressionForRule<T>(r,param));
-            }
+            var expressions = rules.Select(r => GetExpressionForRule<T>(r, param)).ToList();
 
             Expression expr = BinaryExpression(expressions, operation);
             return expr;
@@ -104,18 +100,46 @@ namespace MicroRuleEngine
             return exp;
         }
 
+        public Expression GetProperty<T>(ParameterExpression ordertype, string propname)
+        {
+            MemberExpression propertyOnOrder = null;
+            String[] childProperties = propname.Split('.');
+            var property = typeof(T).GetProperty(childProperties[0]);
+            var paramExp = Expression.Parameter(typeof(T), "SomeObject");
+
+            propertyOnOrder = Expression.PropertyOrField(ordertype, childProperties[0]);
+            for (int i = 1; i < childProperties.Length; i++)
+            {
+                var orig = property;
+                property = property.PropertyType.GetProperty(childProperties[i]);
+                if (property != null)
+                    propertyOnOrder = Expression.PropertyOrField(propertyOnOrder, childProperties[i]);
+            }
+            //propType = propertyOnOrder.Type;
+            return propertyOnOrder;
+        }
+
         Expression BuildExpr<T>(Rule r, ParameterExpression param)
         {
             Expression propExpression = null;
             Type propType = null;
 
             ExpressionType tBinary;
-            if (string.IsNullOrEmpty(r.MemberName))//check is against the object itself
+            var drule = r as DataRule;
+
+            if (string.IsNullOrEmpty(r.MemberName)) //check is against the object itself
             {
                 propExpression = param;
                 propType = propExpression.Type;
             }
-            else if (r.MemberName.Contains('.'))//Child property
+            else if (drule != null)
+            {
+                if (typeof(T) != typeof(System.Data.DataRow))
+                    throw new Exception(" Bad rule");
+                propExpression = GetDataRowField(param, drule.MemberName, drule.Type);
+                propType = propExpression.Type;
+            }
+            else if (r.MemberName.Contains('.')) //Child property
             {
                 String[] childProperties = r.MemberName.Split('.');
                 var property = typeof(T).GetProperty(childProperties[0]);
@@ -131,7 +155,7 @@ namespace MicroRuleEngine
                 }
                 propType = propExpression.Type;
             }
-            else//Property
+            else //Property
             {
                 propExpression = Expression.PropertyOrField(param, r.MemberName);
                 propType = propExpression.Type;
@@ -153,19 +177,31 @@ namespace MicroRuleEngine
             }
             else //Invoke a method on the Property
             {
-                var inputs = r.Inputs.Select(x=> x.GetType()).ToArray();
+                var inputs = r.Inputs.Select(x => x.GetType()).ToArray();
                 var methodInfo = propType.GetMethod(r.Operator, inputs);
                 if (!methodInfo.IsGenericMethod)
-                    inputs = null;//Only pass in type information to a Generic Method
+                    inputs = null; //Only pass in type information to a Generic Method
                 var expressions = r.Inputs.Select(x => Expression.Constant(x)).ToArray();
-                return Expression.Call(propExpression, r.Operator,inputs,expressions);
+                return Expression.Call(propExpression, r.Operator, inputs, expressions);
             }
+        }
+
+        Expression GetDataRowField(ParameterExpression prm, string member, string type)
+        {
+            var typetype = Type.GetType(type);
+            var miGetItem = typeof(System.Data.DataRow).GetMethod("get_Item", new Type[] { typeof(string) });    // const
+
+            return
+                    Expression.Convert(
+                        Expression.Call(prm, miGetItem, Expression.Constant(member, typeof(string)))
+                    , typetype);
         }
 
         private Expression StringToExpression(string value, Type propType)
         {
             ConstantExpression right = null;
-            if (value.ToLower() == "null")
+
+            if (value == null || value.ToLower() == "null")
             {
                 right = Expression.Constant(null);
             }
@@ -248,6 +284,15 @@ namespace MicroRuleEngine
         }
     }
 
+    public class DataRule : Rule
+    {
+        public string Type { get; set; }
+
+        public static DataRule Create<T>(string member, mreOperator oper, string target)
+        {
+            return new DataRule { MemberName = member, TargetValue = target, Operator = oper.ToString(), Type = typeof(T).FullName };
+        }
+    }
 
     //
     // Summary:
