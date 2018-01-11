@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using MicroRuleEngine.Tests.Models;
 
@@ -17,7 +18,7 @@ namespace MicroRuleEngine.Tests
         public void ChildProperties()
         {
             Order order = GetOrder();
-            Rule rule = new Rule()
+            Rule rule = new Rule
             {
                 MemberName = "Customer.Country.CountryCode",
                 Operator = System.Linq.Expressions.ExpressionType.Equal.ToString("g"),
@@ -38,17 +39,19 @@ namespace MicroRuleEngine.Tests
         public void ConditionalLogic()
         {
             Order order = GetOrder();
-            Rule rule = new Rule()
+            Rule rule = new Rule
             {
                 Operator = System.Linq.Expressions.ExpressionType.AndAlso.ToString("g"),
-                Rules = new List<Rule>()
+                                Rules = new List<Rule>
+                            {
+                    new Rule { MemberName = "Customer.LastName", TargetValue = "Doe", Operator = "Equal"},
+                    new Rule
                 {
-                    new Rule(){ MemberName = "Customer.LastName", TargetValue = "Doe", Operator = "Equal"},
-                    new Rule(){ 
                         Operator = "Or",
-                        Rules = new List<Rule>(){
-                            new Rule(){ MemberName = "Customer.FirstName", TargetValue = "John", Operator = "Equal"},
-                            new Rule(){ MemberName = "Customer.FirstName", TargetValue = "Jane", Operator = "Equal"}
+                        Rules = new List<Rule>
+                                    {
+                            new Rule { MemberName = "Customer.FirstName", TargetValue = "John", Operator = "Equal"},
+                            new Rule { MemberName = "Customer.FirstName", TargetValue = "Jane", Operator = "Equal"}
                         }
                     }
                 }
@@ -68,38 +71,10 @@ namespace MicroRuleEngine.Tests
         public void BooleanMethods()
         {
             Order order = GetOrder();
-            Rule rule = new Rule()
+            Rule rule = new Rule
             {
                 Operator = "HasItem",//The Order Object Contains a method named 'HasItem' that returns true/false
-                Inputs = new List<object>{"Test"}
-            };
-            MRE engine = new MRE();
-            var boolMethod = engine.CompileRule<Order>(rule);
-            bool passes = boolMethod(order);
-            Assert.IsTrue(passes);
-
-            var item = order.Items.First(x => x.ItemCode == "Test");
-            item.ItemCode = "Changed";
-            passes = boolMethod(order);
-            Assert.IsFalse(passes);
-        }
-
-        [TestMethod,Ignore]
-                public void AnyOperator()
-                    {
-                        Order order = GetOrder();
-                        Rule rule = new Rule
-                        {
-                            MemberName = "Items", // The array property
-                            Operator = "Any",
-                            Rules = new List<Rule>()
-                            {
-                                new Rule
-                                {
-                                    MemberName = "ItemCode", // the property in the above array item
-                                    TargetValue = "Test",
-                                }
-                            }
+                                Inputs = new List<object> { "Test" }
                         };
                         MRE engine = new MRE();
 
@@ -121,7 +96,7 @@ namespace MicroRuleEngine.Tests
         public void ChildPropertyBooleanMethods()
         {
             Order order = GetOrder();
-            Rule rule = new Rule()
+            Rule rule = new Rule
             { 
                 MemberName = "Customer.FirstName",
                 Operator = "EndsWith",//Regular method that exists on string.. As a note expression methods are not available
@@ -141,7 +116,7 @@ namespace MicroRuleEngine.Tests
         public void RegexIsMatch()//Had to add a Regex evaluator to make it feel 'Complete'
         {
             Order order = GetOrder();
-            Rule rule = new Rule()
+            Rule rule = new Rule
             {
                 MemberName = "Customer.FirstName",
                 Operator = "IsMatch",
@@ -159,24 +134,24 @@ namespace MicroRuleEngine.Tests
 
         public Order GetOrder()
         {
-            Order order = new Order()
+            Order order = new Order
             {
                 OrderId = 1,
-                Customer = new Customer()
+                                  Customer = new Customer
                 {
                     FirstName = "John",
                     LastName = "Doe",
-                    Country = new Country()
+                                                     Country = new Country
                     {
                         CountryCode = "AUS"
                     }
                 },
-                Items = new List<Item>()
+                                  Items = new List<Item>
                 {
-                    new Item() {ItemCode = "MM23", Cost = 5.25M},
-                    new Item() {ItemCode = "LD45", Cost = 5.25M},
-                    new Item() {ItemCode = "Test", Cost = 3.33M},
-                },
+                                                  new Item {ItemCode = "MM23", Cost = 5.25M},
+                                                  new Item {ItemCode = "LD45", Cost = 5.25M},
+                                                  new Item {ItemCode = "Test", Cost = 3.33M},
+                                              }
             };
             return order;
         }
