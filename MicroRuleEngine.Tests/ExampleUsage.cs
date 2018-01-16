@@ -13,8 +13,24 @@ namespace MicroRuleEngine.Tests
     [TestClass]
     public class ExampleUsage
     {
-
         [TestMethod]
+        public void ChildPropertiesOfNull()
+        {
+            Order order = GetOrder();
+            order.Customer = null;
+            Rule rule = new Rule
+            {
+                MemberName = "Customer.Country.CountryCode",
+                Operator = ExpressionType.Equal.ToString("g"),
+                TargetValue = "AUS"
+            };
+            MRE engine = new MRE();
+            var compiledRule = engine.CompileRule<Order>(rule);
+            bool passes = compiledRule(order);
+            Assert.IsFalse(passes);
+        }
+
+[TestMethod]
         public void ChildProperties()
         {
             Order order = GetOrder();
@@ -67,33 +83,81 @@ namespace MicroRuleEngine.Tests
         }
 
         [TestMethod]
-
         public void BooleanMethods()
         {
             Order order = GetOrder();
             Rule rule = new Rule
             {
                 Operator = "HasItem",//The Order Object Contains a method named 'HasItem' that returns true/false
-                                Inputs = new List<object> { "Test" }
-                        };
-                        MRE engine = new MRE();
+                Inputs = new List<object> { "Test" }
+            };
+            MRE engine = new MRE();
 
             var boolMethod = engine.CompileRule<Order>(rule);
-                        bool passes = boolMethod(order);
-                        Assert.IsTrue(passes);
-            
-                            var item = order.Items.First(x => x.ItemCode == "Test");
-                        item.ItemCode = "Changed";
-                        passes = boolMethod(order);
-                        Assert.IsFalse(passes);
-                    }
-    
+            bool passes = boolMethod(order);
+            Assert.IsTrue(passes);
 
+            var item = order.Items.First(x => x.ItemCode == "Test");
+            item.ItemCode = "Changed";
+            passes = boolMethod(order);
+            Assert.IsFalse(passes);
+        }
+
+        [TestMethod]
+        public void BooleanMethods_ByType()
+        {
+            Order order = GetOrder();
+            Rule rule = new Rule
+            {
+                Operator = "HasItem",//The Order Object Contains a method named 'HasItem' that returns true/false
+                Inputs = new List<object> { "Test" }
+            };
+            MRE engine = new MRE();
+
+            var boolMethod = engine.CompileRule(typeof(Order), rule);
+            bool passes = boolMethod(order);
+            Assert.IsTrue(passes);
+
+            var item = order.Items.First(x => x.ItemCode == "Test");
+            item.ItemCode = "Changed";
+            passes = boolMethod(order);
+            Assert.IsFalse(passes);
+        }
+
+         [TestMethod]
+        public void AnyOperator()
+        {
+            Order order = GetOrder();
+            //order.Items.Any(a => a.ItemCode == "test")
+            Rule rule = new Rule
+            {
+                MemberName = "Items",// The array property
+                Operator = "Any",
+                Rules = new Rule[]
+                {
+                     new Rule
+                     {
+                         MemberName = "ItemCode", // the property in the above array item
+                        Operator = "Equal",
+                         TargetValue = "Test",
+                     }
+                 }
+            };
+            MRE engine = new MRE();
+            var boolMethod = engine.CompileRule<Order>(rule);
+            bool passes = boolMethod(order);
+            Assert.IsTrue(passes);
+
+            var item = order.Items.First(x => x.ItemCode == "Test");
+            item.ItemCode = "Changed";
+            passes = boolMethod(order);
+            Assert.IsFalse(passes);
+        }
+ 
 
 
         [TestMethod]
-
-        public void ChildPropertyBooleanMethods()
+         public void ChildPropertyBooleanMethods()
         {
             Order order = GetOrder();
             Rule rule = new Rule
@@ -112,6 +176,22 @@ namespace MicroRuleEngine.Tests
             Assert.IsFalse(passes);
         }
 
+        [TestMethod]
+         public void ChildPropertyOfNullBooleanMethods()
+         {
+             Order order = GetOrder();
+             order.Customer = null;
+             Rule rule = new Rule
+             {
+                 MemberName = "Customer.FirstName",
+                 Operator = "EndsWith", //Regular method that exists on string.. As a note expression methods are not available
+                 Inputs = new List<object> { "ohn" }
+             };
+            MRE engine = new MRE();
+            var childPropCheck = engine.CompileRule<Order>(rule);
+             bool passes = childPropCheck(order);
+             Assert.IsFalse(passes);
+         }
         [TestMethod]
         public void RegexIsMatch()//Had to add a Regex evaluator to make it feel 'Complete'
         {
