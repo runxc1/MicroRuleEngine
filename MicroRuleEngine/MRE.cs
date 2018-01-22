@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 
 namespace MicroRuleEngine
@@ -14,6 +13,11 @@ namespace MicroRuleEngine
 		private static readonly Lazy<MethodInfo> _miRegexIsMatch = new Lazy<MethodInfo>(() => typeof(Regex).GetMethod("IsMatch", new[] { typeof(string), typeof(string), typeof(RegexOptions) }));
 		private static readonly Lazy<MethodInfo> _miGetItem = new Lazy<MethodInfo>(() => typeof(System.Data.DataRow).GetMethod("get_Item", new Type[] { typeof(string) }));
 
+		public bool PassesRules<T>(IList<Rule> rules, T toInspect)
+		{
+			return this.CompileRules<T>(rules).Invoke(toInspect);
+		}
+
 		public Func<T, bool> CompileRule<T>(Rule r)
 		{
 			var paramUser = Expression.Parameter(typeof(T));
@@ -21,36 +25,37 @@ namespace MicroRuleEngine
 
 			return Expression.Lambda<Func<T, bool>>(expr, paramUser).Compile();
 		}
-	    public Func<object, bool> CompileRule(Type type, Rule r)
-	    {
-	        var paramUser = Expression.Parameter(type);
-	        Expression expr = GetExpressionForRule(type, r, paramUser);
+		public Func<object, bool> CompileRule(Type type, Rule r)
+		{
+			var paramUser = Expression.Parameter(type);
+			Expression expr = GetExpressionForRule(type, r, paramUser);
 
-	        return Expression.Lambda<Func<object, bool>>(expr, paramUser).Compile();
-	    }
-        public Func<T, bool> CompileRules<T>(IEnumerable<Rule> rules)
+			return Expression.Lambda<Func<object, bool>>(expr, paramUser).Compile();
+		}
+		public Func<T, bool> CompileRules<T>(IEnumerable<Rule> rules)
 		{
 			var paramUser = Expression.Parameter(typeof(T));
 			var expr = BuildNestedExpression(typeof(T), rules, paramUser, ExpressionType.And);
 			return Expression.Lambda<Func<T, bool>>(expr, paramUser).Compile();
 		}
 
-        public Func<object, bool> CompileRules(Type type, IEnumerable<Rule> rules)
-        {
-            var paramUser = Expression.Parameter(type);
-            var expr = BuildNestedExpression(type, rules, paramUser, ExpressionType.And);
-            return Expression.Lambda<Func<object, bool>>(expr, paramUser).Compile();
-        }
-
-        // Build() is some forks
-        protected static Expression GetExpressionForRule(Type type,  Rule rule, ParameterExpression parameterExpression)
+		public Func<object, bool> CompileRules(Type type, IEnumerable<Rule> rules)
 		{
-            if (isEnumrableOprator(rule.Operator))
-            {
-                return BuildEnumerableOperatorExpression(type, rule, parameterExpression);
-            }
-                           ExpressionType nestedOperator;
-			if (ExpressionType.TryParse(rule.Operator, out nestedOperator) && _nestedOperators.Contains(nestedOperator) && rule.Rules != null && rule.Rules.Any())
+			var paramUser = Expression.Parameter(type);
+			var expr = BuildNestedExpression(type, rules, paramUser, ExpressionType.And);
+			return Expression.Lambda<Func<object, bool>>(expr, paramUser).Compile();
+		}
+
+		// Build() is some forks
+		protected static Expression GetExpressionForRule(Type type, Rule rule, ParameterExpression parameterExpression)
+		{
+			if (isEnumrableOprator(rule.Operator))
+			{
+				return BuildEnumerableOperatorExpression(type, rule, parameterExpression);
+			}
+			ExpressionType nestedOperator;
+			if (ExpressionType.TryParse(rule.Operator, out nestedOperator) && _nestedOperators.Contains(nestedOperator) &&
+				rule.Rules != null && rule.Rules.Any())
 				return BuildNestedExpression(type, rule.Rules, parameterExpression, nestedOperator);
 			else
 				return BuildExpr(type, rule, parameterExpression);
@@ -100,54 +105,54 @@ namespace MicroRuleEngine
 		}
 
 			return propExpression;
-        }
+		}
 
-        private static Expression BuildEnumerableOperatorExpression(Type type, Rule rule, ParameterExpression parameterExpression)
+		private static Expression BuildEnumerableOperatorExpression(Type type, Rule rule, ParameterExpression parameterExpression)
  {
-            var collectionPropertyExpression = BuildExpr(type, rule, parameterExpression);
+			var collectionPropertyExpression = BuildExpr(type, rule, parameterExpression);
 
-            var itemType = GetCollectionItemType(collectionPropertyExpression.Type);
-            var expressionParameter = Expression.Parameter(itemType);
-          
-            
-            var genericFunc = typeof(Func<,>).MakeGenericType(itemType, typeof(bool));
+			var itemType = GetCollectionItemType(collectionPropertyExpression.Type);
+			var expressionParameter = Expression.Parameter(itemType);
+		  
+			
+			var genericFunc = typeof(Func<,>).MakeGenericType(itemType, typeof(bool));
  
-             var innerExp = BuildNestedExpression(itemType, rule.Rules, expressionParameter, ExpressionType.And);
-             var predicate = Expression.Lambda(genericFunc, innerExp, expressionParameter);
+			 var innerExp = BuildNestedExpression(itemType, rule.Rules, expressionParameter, ExpressionType.And);
+			 var predicate = Expression.Lambda(genericFunc, innerExp, expressionParameter);
  
-             var body = Expression.Call(typeof(Enumerable), rule.Operator, new[] { itemType }, collectionPropertyExpression, predicate);
+			 var body = Expression.Call(typeof(Enumerable), rule.Operator, new[] { itemType }, collectionPropertyExpression, predicate);
  
-             return body;
-         }
+			 return body;
+		 }
  
-         private static Type GetCollectionItemType(Type collectionType)
-         {
-             if (collectionType.IsArray)
-                 return collectionType.GetElementType();
+		 private static Type GetCollectionItemType(Type collectionType)
+		 {
+			 if (collectionType.IsArray)
+				 return collectionType.GetElementType();
  
-             if ((collectionType.GetInterface("IEnumerable") != null))
-                 return collectionType.GetGenericArguments()[0];
+			 if ((collectionType.GetInterface("IEnumerable") != null))
+				 return collectionType.GetGenericArguments()[0];
 
-            return typeof(object); ;
-         }
+			return typeof(object); ;
+		 }
 
 
-        static readonly  string[] _enumerableOperators = { "Any", "All" };
+		static readonly  string[] _enumerableOperators = { "Any", "All" };
 private static bool isEnumrableOprator(string oprator)
-         {
-            return _enumerableOperators.Any(op => string.Equals(oprator, op, StringComparison.CurrentCultureIgnoreCase));
-         }
+		 {
+			return _enumerableOperators.Any(op => string.Equals(oprator, op, StringComparison.CurrentCultureIgnoreCase));
+		 }
 
-    private static Expression BuildExpr(Type type, Rule r, Expression param)
+	private static Expression BuildExpr(Type type, Rule r, Expression param)
 		{
 			Expression propExpression;
 			Type propType;
 
-            if (param.Type == typeof(object))
-            {
-                param = Expression.TypeAs(param, type);
-            }
-            var drule = r as DataRule;
+			if (param.Type == typeof(object))
+			{
+				param = Expression.TypeAs(param, type);
+			}
+			var drule = r as DataRule;
 
 			if (string.IsNullOrEmpty(r.MemberName)) //check is against the object itself
 			{
@@ -167,39 +172,39 @@ private static bool isEnumrableOprator(string oprator)
 				propType = propExpression.Type;
 			}
 
-            propExpression = Expression.TryCatch(
-                    Expression.Block(propExpression.Type, propExpression),
-                    Expression.Catch(typeof(NullReferenceException), Expression.Default(propExpression.Type))
-               );
-            // is the operator a known .NET operator?
-            ExpressionType tBinary;
+			propExpression = Expression.TryCatch(
+					Expression.Block(propExpression.Type, propExpression),
+					Expression.Catch(typeof(NullReferenceException), Expression.Default(propExpression.Type))
+			   );
+			// is the operator a known .NET operator?
+			ExpressionType tBinary;
 
-            if (Enum.TryParse(r.Operator, out tBinary))
+			if (Enum.TryParse(r.Operator, out tBinary))
 				{
 				var right = StringToExpression(r.TargetValue, propType);
 				return Expression.MakeBinary(tBinary, propExpression, right);
 				}
-            if (r.Operator == "IsMatch")
-            {
-                return Expression.Call(
-                    _miRegexIsMatch.Value,
-                    propExpression,
-                    Expression.Constant(r.TargetValue, typeof(string)),
-                    Expression.Constant(RegexOptions.IgnoreCase, typeof(RegexOptions))
-                );
-            }
-            else //Invoke a method on the Property
-            {
-                var inputs = r.Inputs.Select(x => x.GetType()).ToArray();
-                var methodInfo = propType.GetMethod(r.Operator, inputs);
-                if (!methodInfo.IsGenericMethod)
-                    inputs = null;//Only pass in type information to a Generic Method
-                var expressions = r.Inputs.Select(Expression.Constant).ToArray();
-                return Expression.TryCatch(
-                       Expression.Block(typeof(bool), Expression.Call(propExpression, r.Operator, inputs, expressions)),
-                       Expression.Catch(typeof(NullReferenceException), Expression.Constant(false))
-                    );
-            }
+			if (r.Operator == "IsMatch")
+			{
+				return Expression.Call(
+					_miRegexIsMatch.Value,
+					propExpression,
+					Expression.Constant(r.TargetValue, typeof(string)),
+					Expression.Constant(RegexOptions.IgnoreCase, typeof(RegexOptions))
+				);
+			}
+			else //Invoke a method on the Property
+			{
+				var inputs = r.Inputs.Select(x => x.GetType()).ToArray();
+				var methodInfo = propType.GetMethod(r.Operator, inputs);
+				if (!methodInfo.IsGenericMethod)
+					inputs = null;//Only pass in type information to a Generic Method
+				var expressions = r.Inputs.Select(Expression.Constant).ToArray();
+				return Expression.TryCatch(
+					   Expression.Block(typeof(bool), Expression.Call(propExpression, r.Operator, inputs, expressions)),
+					   Expression.Catch(typeof(NullReferenceException), Expression.Constant(false))
+					);
+			}
 		}
 
 		private static Expression GetDataRowField(Expression prm, string member, string type)
@@ -220,7 +225,15 @@ private static bool isEnumrableOprator(string oprator)
 			}
 			else
 			{
-				right = Expression.Constant(propType.IsEnum ? Enum.Parse(propType, value) : Convert.ChangeType(value, propType), propType);
+				object objValue;
+				if (propType.IsEnum)
+					objValue = Enum.Parse(propType, value);
+				else if (propType.Name.Contains("Nullable"))
+					objValue = Convert.ChangeType(value, Nullable.GetUnderlyingType(propType));
+				else
+					objValue = Convert.ChangeType(value, propType);
+
+				right = Expression.Constant(objValue, propType);
 			}
 			return right;
 		}
@@ -314,27 +327,27 @@ private static bool isEnumrableOprator(string oprator)
 		public static TOperand ApplyOperation<TOperand, TReturn>(this IEnumerable<TOperand> source, Func<TOperand, TOperand, TReturn> oper)
 			where TReturn : TOperand
 		{
-		    using (var iter = source.GetEnumerator())
-		    {
-		        var more = iter.MoveNext();
-		        if (!more)
-		            throw new ArgumentOutOfRangeException("source", "Collection must have at least one item");
+			using (var iter = source.GetEnumerator())
+			{
+				var more = iter.MoveNext();
+				if (!more)
+					throw new ArgumentOutOfRangeException("source", "Collection must have at least one item");
 
-		        var lhs = iter.Current;
-		        while (iter.MoveNext())
-		        {
-		            lhs = oper(lhs, iter.Current);
-		        }
+				var lhs = iter.Current;
+				while (iter.MoveNext())
+				{
+					lhs = oper(lhs, iter.Current);
+				}
 
-		        return lhs;
-		    }
+				return lhs;
+			}
 		}
 
-        public static void AddRange<T>(this IList<T> collection, IEnumerable<T> newValues)
-        {
-            foreach (var item in newValues)
-                collection.Add(item);
-        }
+		public static void AddRange<T>(this IList<T> collection, IEnumerable<T> newValues)
+		{
+			foreach (var item in newValues)
+				collection.Add(item);
+		}
 	}
 
 	public class RulesException : ApplicationException
