@@ -25,12 +25,12 @@ namespace MicroRuleEngine
 
 			return Expression.Lambda<Func<T, bool>>(expr, paramUser).Compile();
 		}
-		public Func<object, bool> CompileRule(Type type, Rule r)
+		public Delegate CompileRule(Type type, Rule r)
 		{
 			var paramUser = Expression.Parameter(type);
 			Expression expr = GetExpressionForRule(type, r, paramUser);
 
-			return Expression.Lambda<Func<object, bool>>(expr, paramUser).Compile();
+		    return Expression.Lambda(expr, paramUser).Compile();
 		}
 		public Func<T, bool> CompileRules<T>(IEnumerable<Rule> rules)
 		{
@@ -49,7 +49,7 @@ namespace MicroRuleEngine
 		// Build() is some forks
 		protected static Expression GetExpressionForRule(Type type, Rule rule, ParameterExpression parameterExpression)
 		{
-			if (isEnumrableOprator(rule.Operator))
+			if (IsEnumerableOperator(rule.Operator))
 			{
 				return BuildEnumerableOperatorExpression(type, rule, parameterExpression);
 			}
@@ -133,81 +133,80 @@ namespace MicroRuleEngine
 			 if ((collectionType.GetInterface("IEnumerable") != null))
 				 return collectionType.GetGenericArguments()[0];
 
-			return typeof(object); ;
+			return typeof(object);
 		 }
 
 
 		static readonly  string[] _enumerableOperators = { "Any", "All" };
-private static bool isEnumrableOprator(string oprator)
+private static bool IsEnumerableOperator(string oprator)
 		 {
 			return _enumerableOperators.Any(op => string.Equals(oprator, op, StringComparison.CurrentCultureIgnoreCase));
 		 }
 
-	private static Expression BuildExpr(Type type, Rule r, Expression param)
-		{
-			Expression propExpression;
-			Type propType;
+	    private static Expression BuildExpr(Type type, Rule rule, Expression param)
+	    {
+	        Expression propExpression;
+	        Type propType;
 
-			if (param.Type == typeof(object))
-			{
-				param = Expression.TypeAs(param, type);
-			}
-			var drule = r as DataRule;
+	        if (param.Type == typeof(object))
+	        {
+	            param = Expression.TypeAs(param, type);
+	        }
+	        var drule = rule as DataRule;
 
-			if (string.IsNullOrEmpty(r.MemberName)) //check is against the object itself
-			{
-				propExpression = param;
-				propType = propExpression.Type;
-			}
-			else if (drule != null)
-			{
-				if (type != typeof(System.Data.DataRow))
-					throw new RulesException(" Bad rule");
-				propExpression = GetDataRowField(param, drule.MemberName, drule.Type);
-				propType = propExpression.Type;
-			}
-			else 
-			{
-				propExpression = GetProperty(param, r.MemberName);
-				propType = propExpression.Type;
-			}
+	        if (string.IsNullOrEmpty(rule.MemberName)) //check is against the object itself
+	        {
+	            propExpression = param;
+	            propType = propExpression.Type;
+	        }
+	        else if (drule != null)
+	        {
+	            if (type != typeof(System.Data.DataRow))
+	                throw new RulesException(" Bad rule");
+	            propExpression = GetDataRowField(param, drule.MemberName, drule.Type);
+	            propType = propExpression.Type;
+	        }
+	        else
+	        {
+	            propExpression = GetProperty(param, rule.MemberName);
+	            propType = propExpression.Type;
+	        }
 
-			propExpression = Expression.TryCatch(
-					Expression.Block(propExpression.Type, propExpression),
-					Expression.Catch(typeof(NullReferenceException), Expression.Default(propExpression.Type))
-			   );
-			// is the operator a known .NET operator?
-			ExpressionType tBinary;
+	        propExpression = Expression.TryCatch(
+	            Expression.Block(propExpression.Type, propExpression),
+	            Expression.Catch(typeof(NullReferenceException), Expression.Default(propExpression.Type))
+	        );
+	        // is the operator a known .NET operator?
+	        ExpressionType tBinary;
 
-			if (Enum.TryParse(r.Operator, out tBinary))
-				{
-				var right = StringToExpression(r.TargetValue, propType);
-				return Expression.MakeBinary(tBinary, propExpression, right);
-				}
-			if (r.Operator == "IsMatch")
-			{
-				return Expression.Call(
-					_miRegexIsMatch.Value,
-					propExpression,
-					Expression.Constant(r.TargetValue, typeof(string)),
-					Expression.Constant(RegexOptions.IgnoreCase, typeof(RegexOptions))
-				);
-			}
-			else //Invoke a method on the Property
-			{
-				var inputs = r.Inputs.Select(x => x.GetType()).ToArray();
-				var methodInfo = propType.GetMethod(r.Operator, inputs);
-				if (!methodInfo.IsGenericMethod)
-					inputs = null;//Only pass in type information to a Generic Method
-				var expressions = r.Inputs.Select(Expression.Constant).ToArray();
-				return Expression.TryCatch(
-					   Expression.Block(typeof(bool), Expression.Call(propExpression, r.Operator, inputs, expressions)),
-					   Expression.Catch(typeof(NullReferenceException), Expression.Constant(false))
-					);
-			}
-		}
+	        if (Enum.TryParse(rule.Operator, out tBinary))
+	        {
+	            var right = StringToExpression(rule.TargetValue, propType);
+	            return Expression.MakeBinary(tBinary, propExpression, right);
+	        }
+	        if (rule.Operator == "IsMatch")
+	        {
+	            return Expression.Call(
+	                _miRegexIsMatch.Value,
+	                propExpression,
+	                Expression.Constant(rule.TargetValue, typeof(string)),
+	                Expression.Constant(RegexOptions.IgnoreCase, typeof(RegexOptions))
+	            );
+	        }
+	        //Invoke a method on the Property
+	        var inputs = rule.Inputs.Select(x => x.GetType()).ToArray();
+	        var methodInfo = propType.GetMethod(rule.Operator, inputs);
+	        if (!methodInfo.IsGenericMethod)
+	            inputs = null; //Only pass in type information to a Generic Method
+	        var expressions = rule.Inputs.Select(Expression.Constant).ToArray();
 
-		private static Expression GetDataRowField(Expression prm, string member, string type)
+	        return Expression.TryCatch(
+	            Expression.Block(typeof(bool), Expression.Call(propExpression, rule.Operator, inputs, expressions)),
+	            Expression.Catch(typeof(NullReferenceException), Expression.Constant(false))
+	        );
+	    }
+
+	    private static Expression GetDataRowField(Expression prm, string member, string type)
 		{
 			return
 					Expression.Convert(

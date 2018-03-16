@@ -13,6 +13,8 @@ namespace MicroRuleEngine.Tests.Models
         public int OrderId { get; set; }
         public Customer Customer { get; set; }
         public List<Item> Items { get; set; }
+        public  decimal Total { get; set; }
+        public DateTime OrderDate { get; set; }
         public bool HasItem(string itemCode)
         {
             return Items.Any(x => x.ItemCode == itemCode);

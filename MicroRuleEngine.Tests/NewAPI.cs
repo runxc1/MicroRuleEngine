@@ -28,6 +28,71 @@ namespace MicroRuleEngine.Tests
             Assert.IsFalse(passes);
         }
 
+        [TestMethod]
+        public void IntProperties()
+        {
+            Order order = GetOrder();
+            Rule rule = Rule.Create("OrderId", mreOperator.Equal, "1");
+
+            MRE engine = new MRE();
+            var compiledRule = engine.CompileRule<Order>(rule);
+            bool passes = compiledRule(order);
+            Assert.IsTrue(passes);
+
+            order.OrderId = 5;
+            passes = compiledRule(order);
+            Assert.IsFalse(passes);
+        }
+
+
+        [TestMethod]
+        public void DateProperties()
+        {
+            Order order = GetOrder();
+            Rule rule = Rule.Create("OrderDate", mreOperator.LessThan, "1800-01-01");
+
+            MRE engine = new MRE();
+            var compiledRule = engine.CompileRule<Order>(rule);
+            bool passes = compiledRule(order);
+            Assert.IsTrue(passes);
+
+            order.OrderDate = new DateTime(1814, 9, 13);
+            passes = compiledRule(order);
+            Assert.IsFalse(passes);
+        }
+
+        [TestMethod]
+        public void DecimalProperties()
+        {
+            Order order = GetOrder();
+            Rule rule = Rule.Create("Total", mreOperator.GreaterThan, "12.00");
+
+            MRE engine = new MRE();
+            var compiledRule = engine.CompileRule<Order>(rule);
+            bool passes = compiledRule(order);
+            Assert.IsTrue(passes);
+
+            order.Total = 9.99m;
+            passes = compiledRule(order);
+            Assert.IsFalse(passes);
+        }
+
+
+        [TestMethod, Ignore]
+        public void Array_Test()
+        {
+            Order order = GetOrder();
+            Rule rule = Rule.Create("Items[0].Cost", mreOperator.Equal, "5.25");
+
+            MRE engine = new MRE();
+            var compiledRule = engine.CompileRule<Order>(rule);
+            bool passes = compiledRule(order);
+            Assert.IsTrue(passes);
+
+            order.Items[0].Cost = 6.99m;
+            passes = compiledRule(order);
+            Assert.IsFalse(passes);
+        }
 
         [TestMethod]
         public void ConditionalLogic2()
@@ -138,6 +203,8 @@ namespace MicroRuleEngine.Tests
                         CountryCode = "AUS"
                     }
                 },
+                Total = 13.83m,
+                OrderDate = new DateTime(1776, 7, 4),
                 Items = new List<Item>(){
                     new Item(){ ItemCode = "MM23", Cost=5.25M},
                     new Item(){ ItemCode = "LD45", Cost=5.25M},

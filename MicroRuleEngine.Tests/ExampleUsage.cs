@@ -115,12 +115,12 @@ namespace MicroRuleEngine.Tests
             MRE engine = new MRE();
 
             var boolMethod = engine.CompileRule(typeof(Order), rule);
-            bool passes = boolMethod(order);
+            bool passes =(bool)  boolMethod.DynamicInvoke(order);
             Assert.IsTrue(passes);
 
             var item = order.Items.First(x => x.ItemCode == "Test");
             item.ItemCode = "Changed";
-            passes = boolMethod(order);
+            passes = (bool)boolMethod.DynamicInvoke(order);
             Assert.IsFalse(passes);
         }
 
