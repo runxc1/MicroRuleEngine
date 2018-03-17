@@ -76,6 +76,23 @@ namespace MicroRuleEngine.Tests
             Assert.IsFalse(passes);
         }
 
+        [TestMethod]
+        public void NullableProperties()
+        {
+            Order order = ExampleUsage.GetOrder();
+            order.Total = null;
+            Rule rule = Rule.Create("Total", mreOperator.NotEqual, null);
+
+            MRE engine = new MRE();
+            var compiledRule = engine.CompileRule<Order>(rule);
+            bool passes = compiledRule(order);
+            Assert.IsTrue(passes);
+
+            order.Total = 9.99m;
+            passes = compiledRule(order);
+            Assert.IsFalse(passes);
+        }
+
 
         [TestMethod]
         public void ArrayTest()
