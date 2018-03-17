@@ -17,18 +17,21 @@ Additionally, I've added unit tests/examples shows rules for testing integer & D
 comparisons besides equality (These always worked; I just added demos of them).  Also, examples of 
 serializing/deserializing a Rule as XML and JSON.  (All these in the unit tests project)
 
-Plus, the member property which are Arrays or List<>s (or  can now accept a integer index:
+ - the member property which are Arrays or List<>s (or  can now accept a integer index:
 ```csharp
 Rule rule = Rule.Create("Items[1].Cost", mreOperator.Equal, "5.25");
 ```
 
-And, the new class `DataRule` allows defining rules which address ADO.NET DataSets:
+- the new class `DataRule` allows defining rules which address ADO.NET DataSets:
 ```csharp
 // (int)dataRow["Column2"] == 123
 DataRule.Create<int>("Column2", mreOperator.Equal, "123") 
 ```
 
-
+- Add self-referential targets, indicated by the "*." at the beginning.
+```csharp
+Rule rule = Rule.Create("Items[1].Cost", mreOperator.Equal, "*.Items[0].Cost");
+```
  
 
  (end fork note)

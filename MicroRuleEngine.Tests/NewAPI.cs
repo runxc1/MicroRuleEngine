@@ -117,6 +117,23 @@ namespace MicroRuleEngine.Tests
         }
 
         [TestMethod]
+        public void SelfReferenialTest()
+        {
+            Order order = ExampleUsage.GetOrder();
+
+            Rule rule = Rule.Create("Items[1].Cost", mreOperator.Equal, "*.Items[0].Cost");
+
+            MRE engine = new MRE();
+            var compiledRule = engine.CompileRule<Order>(rule);
+            bool passes = compiledRule(order);
+            Assert.IsTrue(passes);
+
+            order.Items[1].Cost = 6.99m;
+            passes = compiledRule(order);
+            Assert.IsFalse(passes);
+        }
+
+        [TestMethod]
         public void ConditionalLogic2()
         {
             Order order = ExampleUsage.GetOrder();

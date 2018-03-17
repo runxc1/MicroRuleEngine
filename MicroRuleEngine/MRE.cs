@@ -224,7 +224,16 @@ namespace MicroRuleEngine
 
 			if (ExpressionType.TryParse(rule.Operator, out tBinary))
 			{
-				var right = StringToExpression(rule.TargetValue, propType);
+			    Expression right;
+			    var txt = rule.TargetValue as string;
+			    if (txt != null && txt.StartsWith("*."))
+			    {
+			        txt = txt.Substring(2);
+			        right = GetProperty(param, txt);
+			    }
+                else
+				    right = StringToExpression(rule.TargetValue, propType);
+
 				return Expression.MakeBinary(tBinary, propExpression, right);
 			}
 			if (rule.Operator == "IsMatch")
