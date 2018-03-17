@@ -61,7 +61,8 @@ namespace MicroRuleEngine.Tests
             {
                 Rule rule = Rule.Create("Customer.LastName", mreOperator.Equal, "Doe")
                             & (Rule.Create("Customer.FirstName", mreOperator.Equal, "John") |
-                               Rule.Create("Customer.FirstName", mreOperator.Equal, "Jane"));
+                               Rule.Create("Customer.FirstName", mreOperator.Equal, "Jane"))
+                               & Rule.Create("Items[1].Cost", mreOperator.Equal, 5.25m);
 
                 serializer.WriteObject(stream1, rule);
 

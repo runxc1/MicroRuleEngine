@@ -287,32 +287,35 @@ namespace MicroRuleEngine
 					, Type.GetType(type));
 		}
 
-		private static Expression StringToExpression(string value, Type propType)
+		private static Expression StringToExpression(object value, Type propType)
 		{
 			Debug.Assert(propType != null);
 
 			object safevalue;
 			Type valuetype = propType;
-
-			if (value.ToLower() == "null")
+		    var txt = value as string;
+			if (value == null)
 			{
 				safevalue = null;
 			}
-			else if (propType.IsEnum)
+            else if (txt != null)
 			{
-				safevalue = Enum.Parse(propType, value);
+			    if (txt.ToLower() == "null")
+			        safevalue = null;
+			    else if (propType.IsEnum)
+			        safevalue = Enum.Parse(propType, txt);
+			    else
+			        safevalue = Convert.ChangeType(value, valuetype);
 			}
-			else
-			{
-				if (propType.Name == "Nullable`1")
-				{
-					valuetype = Nullable.GetUnderlyingType(propType);
-				}
+            else if (propType.Name == "Nullable`1")
+		    {
+		        valuetype = Nullable.GetUnderlyingType(propType);
+		        safevalue = Convert.ChangeType(value, valuetype);
+		    }
+            else
+			    safevalue = Convert.ChangeType(value, valuetype);
 
-				safevalue = Convert.ChangeType(value, valuetype);
-			}
-
-			return Expression.Constant(safevalue, propType);
+            return Expression.Constant(safevalue, propType);
 		}
 
 		private static Type ElementType(Type seqType)
@@ -370,7 +373,7 @@ public class Rule
 	[DataMember]
 		public string Operator { get; set; }
 	[DataMember]
-		public string TargetValue { get; set; }
+		public object TargetValue { get; set; }
 	[DataMember]
 		public IList<Rule> Rules { get; set; }
 	[DataMember]
@@ -415,7 +418,7 @@ public class Rule
 			return target;
 		}
 
-	public static Rule Create(string member, mreOperator oper, string target)
+	public static Rule Create(string member, mreOperator oper, object target)
 		{
 			return new Rule { MemberName = member, TargetValue = target, Operator = oper.ToString() };
 		}

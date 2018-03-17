@@ -31,7 +31,7 @@ namespace MicroRuleEngine.Tests
         public void IntProperties()
         {
             Order order = ExampleUsage.GetOrder();
-            Rule rule = Rule.Create("OrderId", mreOperator.Equal, "1");
+            Rule rule = Rule.Create("OrderId", mreOperator.Equal, 1);
 
             MRE engine = new MRE();
             var compiledRule = engine.CompileRule<Order>(rule);
@@ -64,7 +64,7 @@ namespace MicroRuleEngine.Tests
         public void DecimalProperties()
         {
             Order order = ExampleUsage.GetOrder();
-            Rule rule = Rule.Create("Total", mreOperator.GreaterThan, "12.00");
+            Rule rule = Rule.Create("Total", mreOperator.GreaterThan, 12.00m);
 
             MRE engine = new MRE();
             var compiledRule = engine.CompileRule<Order>(rule);
@@ -82,7 +82,7 @@ namespace MicroRuleEngine.Tests
         {
             var  array = new ArrayInside();
 
-            Rule rule = Rule.Create("Dbl[1]", mreOperator.Equal, "22.222");
+            Rule rule = Rule.Create("Dbl[1]", mreOperator.Equal, 22.222);
 
             MRE engine = new MRE();
             var compiledRule = engine.CompileRule<ArrayInside>(rule);
@@ -104,7 +104,7 @@ namespace MicroRuleEngine.Tests
         {
             Order order = ExampleUsage.GetOrder();
 
-            Rule rule = Rule.Create("Items[1].Cost", mreOperator.Equal, "5.25");
+            Rule rule = Rule.Create("Items[1].Cost", mreOperator.Equal, 5.25m);
 
             MRE engine = new MRE();
             var compiledRule = engine.CompileRule<Order>(rule);
