@@ -5,10 +5,32 @@ MicroRuleEngine is a single file rule engine
 On this fork, I've added a new API, since the original is rather unwieldy.   With the new API, the Rule defined below in `ConditionalLogic()` can be written as:
 ```csharp
 Rule rule = Rule.Create("Customer.LastName", mreOperator.Equal, "Doe")
-         & (Rule.Create("Customer.FirstName", mreOperator.Equal, "John") | Rule.Create("Customer.FirstName", mreOperator.Equal, "Jane"));
+		 & (Rule.Create("Customer.FirstName", mreOperator.Equal, "John") | Rule.Create("Customer.FirstName", mreOperator.Equal, "Jane"));
 ```
  NewApi.c in the UnitTest Project contains all the original unit tests re-written with the new API.
+
+ I've also incorporated most additions from the various forks of this.  Two notabky exceptions are that I have
+ not made MRE a static class (it seemed pointless, and prevents use of an IoC container), and I've left all the 
+ source code in a single file (like the original author, I have a business need having it contained in a single file)
+
+Additionally, I've added unit tests/examples shows rules for testing integer & DateTime properties, and using 
+comparisons besides equality (These always worked; I just added demos of them).  Also, examples of 
+serializing/deserializing a Rule as XML and JSON.  (All these in the unit tests project)
+
+Plus, the member property which are Arrays or List<>s (or  can now accept a integer index:
+```csharp
+Rule rule = Rule.Create("Items[1].Cost", mreOperator.Equal, "5.25");
+```
+
+And, the new class `DataRule` allows defining rules which address ADO.NET DataSets:
+```csharp
+// (int)dataRow["Column2"] == 123
+DataRule.Create<int>("Column2", mreOperator.Equal, "123") 
+```
+
+
  
+
  (end fork note)
 
 

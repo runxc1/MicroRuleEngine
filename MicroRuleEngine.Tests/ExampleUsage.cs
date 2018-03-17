@@ -30,7 +30,7 @@ namespace MicroRuleEngine.Tests
             Assert.IsFalse(passes);
         }
 
-[TestMethod]
+        [TestMethod]
         public void ChildProperties()
         {
             Order order = GetOrder();
@@ -212,26 +212,29 @@ namespace MicroRuleEngine.Tests
             Assert.IsFalse(passes);
         }
 
-        public Order GetOrder()
+        public static Order GetOrder()
         {
-            Order order = new Order
+            Order order = new Order()
             {
                 OrderId = 1,
-                                  Customer = new Customer
+                Customer = new Customer()
                 {
                     FirstName = "John",
                     LastName = "Doe",
-                                                     Country = new Country
+                    Country = new Country()
                     {
                         CountryCode = "AUS"
                     }
                 },
-                                  Items = new List<Item>
+                Items = new List<Item>()
                 {
-                                                  new Item {ItemCode = "MM23", Cost = 5.25M},
-                                                  new Item {ItemCode = "LD45", Cost = 5.25M},
-                                                  new Item {ItemCode = "Test", Cost = 3.33M},
-                                              }
+                    new Item { ItemCode = "MM23", Cost=5.25M},
+                    new Item { ItemCode = "LD45", Cost=5.25M},
+                    new Item { ItemCode = "Test", Cost=3.33M},
+                },
+                Total = 13.83m,
+                OrderDate = new DateTime(1776, 7, 4)
+
             };
             return order;
         }
