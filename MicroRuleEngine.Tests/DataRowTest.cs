@@ -11,7 +11,7 @@ namespace MicroRuleEngine.Tests
         public void DataRowTest()
         {
             var dr = GetDataRow();
-
+            // (int) dr["Column2"] == 123 &&  (string) dr["Column1"] == "Test"
             Rule rule = DataRule.Create<int>("Column2", mreOperator.Equal, "123") & DataRule.Create<string>("Column1", mreOperator.Equal, "Test");
 
             MRE engine = new MRE();
