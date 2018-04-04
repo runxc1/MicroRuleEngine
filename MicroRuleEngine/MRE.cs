@@ -97,7 +97,6 @@ namespace MicroRuleEngine
 					break;
 			}
 
-			//return expressions.ApplyOperation(methodExp);
 			return expressions.Aggregate(methodExp);
 		}
 
@@ -224,15 +223,15 @@ namespace MicroRuleEngine
 
 			if (ExpressionType.TryParse(rule.Operator, out tBinary))
 			{
-			    Expression right;
-			    var txt = rule.TargetValue as string;
-			    if (txt != null && txt.StartsWith("*."))
-			    {
-			        txt = txt.Substring(2);
-			        right = GetProperty(param, txt);
-			    }
-                else
-				    right = StringToExpression(rule.TargetValue, propType);
+				Expression right;
+				var txt = rule.TargetValue as string;
+				if (txt != null && txt.StartsWith("*."))
+				{
+					txt = txt.Substring(2);
+					right = GetProperty(param, txt);
+				}
+				else
+					right = StringToExpression(rule.TargetValue, propType);
 
 				return Expression.MakeBinary(tBinary, propExpression, right);
 			}
@@ -254,7 +253,6 @@ namespace MicroRuleEngine
 				return rule.Rules?.Any() == true
 					? Expression.Call(enumrOperation.MakeGenericMethod(elementType),
 						propExpression,
-//                        Expression.Lambda(GetExpressionForRule(elementType, rule.Rules, lambdaParam, ExpressionType.AndAlso, true), lambdaParam)
 						Expression.Lambda(
 							BuildNestedExpression(elementType, rule.Rules, lambdaParam, ExpressionType.AndAlso),
 							lambdaParam)
@@ -288,12 +286,22 @@ namespace MicroRuleEngine
 		}
 
 
-		private static Expression GetDataRowField(Expression prm, string member, string type)
+		private static Expression GetDataRowField(Expression prm, string member, string typeName)
 		{
-			return
-				Expression.Convert(
-					Expression.Call(prm, _miGetItem.Value, Expression.Constant(member, typeof(string)))
-					, Type.GetType(type));
+			var expMember = Expression.Call(prm, _miGetItem.Value, Expression.Constant(member, typeof(string)));
+			var type = Type.GetType(typeName);
+			Debug.Assert(type != null);
+
+			if (type.IsClass || typeName.StartsWith("System.Nullable") )
+			{
+				//  equals "return  testValue == DBNull.Value  ? (typeName) null : (typeName) testValue"
+				return Expression.Condition(Expression.Equal(expMember, Expression.Constant(DBNull.Value)),
+					Expression.Constant(null, type),
+					Expression.Convert(expMember, type));
+			}
+			else
+				// equals "return (typeName) testValue"
+				return Expression.Convert(expMember, type);
 		}
 
 		private static Expression StringToExpression(object value, Type propType)
@@ -302,29 +310,29 @@ namespace MicroRuleEngine
 
 			object safevalue;
 			Type valuetype = propType;
-		    var txt = value as string;
+			var txt = value as string;
 			if (value == null)
 			{
 				safevalue = null;
 			}
-            else if (txt != null)
+			else if (txt != null)
 			{
-			    if (txt.ToLower() == "null")
-			        safevalue = null;
-			    else if (propType.IsEnum)
-			        safevalue = Enum.Parse(propType, txt);
-			    else
-			        safevalue = Convert.ChangeType(value, valuetype);
+				if (txt.ToLower() == "null")
+					safevalue = null;
+				else if (propType.IsEnum)
+					safevalue = Enum.Parse(propType, txt);
+				else
+					safevalue = Convert.ChangeType(value, valuetype);
 			}
-            else if (propType.Name == "Nullable`1")
-		    {
-		        valuetype = Nullable.GetUnderlyingType(propType);
-		        safevalue = Convert.ChangeType(value, valuetype);
-		    }
-            else
-			    safevalue = Convert.ChangeType(value, valuetype);
+			else if (propType.Name == "Nullable`1")
+			{
+				valuetype = Nullable.GetUnderlyingType(propType);
+				safevalue = Convert.ChangeType(value, valuetype);
+			}
+			else
+				safevalue = Convert.ChangeType(value, valuetype);
 
-            return Expression.Constant(safevalue, propType);
+			return Expression.Constant(safevalue, propType);
 		}
 
 		private static Type ElementType(Type seqType)
@@ -369,34 +377,30 @@ namespace MicroRuleEngine
 		}
 	}
 
-[DataContract]
-public class Rule
-{
+	[DataContract]
+	public class Rule
+	{
 		public Rule()
 		{
 			Inputs = Enumerable.Empty<object>();
 		}
 
-	[DataMember]
-		public string MemberName { get; set; }
-	[DataMember]
-		public string Operator { get; set; }
-	[DataMember]
-		public object TargetValue { get; set; }
-	[DataMember]
-		public IList<Rule> Rules { get; set; }
-	[DataMember]
-		public IEnumerable<object> Inputs { get; set; }
+		[DataMember] public string MemberName { get; set; }
+		[DataMember] public string Operator { get; set; }
+		[DataMember] public object TargetValue { get; set; }
+		[DataMember] public IList<Rule> Rules { get; set; }
+		[DataMember] public IEnumerable<object> Inputs { get; set; }
 
 
-	public static Rule operator |(Rule lhs, Rule rhs)
+		public static Rule operator |(Rule lhs, Rule rhs)
 		{
-			var rule = new Rule { Operator = "Or" };
+			var rule = new Rule {Operator = "Or"};
 			return MergeRulesInto(rule, lhs, rhs);
-	}
-	public static Rule operator &(Rule lhs, Rule rhs)
+		}
+
+		public static Rule operator &(Rule lhs, Rule rhs)
 		{
-			var rule = new Rule { Operator = "AndAlso" };
+			var rule = new Rule {Operator = "AndAlso"};
 			return MergeRulesInto(rule, lhs, rhs);
 		}
 
@@ -404,17 +408,17 @@ public class Rule
 		{
 			target.Rules = new List<Rule>();
 
-			if (lhs.Rules != null  && lhs.Operator == target.Operator)         // left is multiple
+			if (lhs.Rules != null && lhs.Operator == target.Operator) // left is multiple
 			{
 				target.Rules.AddRange(lhs.Rules);
 				if (rhs.Rules != null && rhs.Operator == target.Operator)
-					target.Rules.AddRange(rhs.Rules);     // left & right are multiple
+					target.Rules.AddRange(rhs.Rules); // left & right are multiple
 				else
-					target.Rules.Add(rhs);                // left multi, right single
+					target.Rules.Add(rhs); // left multi, right single
 			}
 			else if (rhs.Rules != null && rhs.Operator == target.Operator)
 			{
-				target.Rules.Add(lhs);                    // left single, right multi
+				target.Rules.Add(lhs); // left single, right multi
 				target.Rules.AddRange(rhs.Rules);
 			}
 			else
@@ -427,85 +431,96 @@ public class Rule
 			return target;
 		}
 
-	public static Rule Create(string member, mreOperator oper, object target)
+		public static Rule Create(string member, mreOperator oper, object target)
 		{
-			return new Rule { MemberName = member, TargetValue = target, Operator = oper.ToString() };
+			return new Rule {MemberName = member, TargetValue = target, Operator = oper.ToString()};
 		}
 
-	public static Rule MethodOnChild(string member, string methodName, params object[] inputs)
+		public static Rule MethodOnChild(string member, string methodName, params object[] inputs)
 		{
-		return new Rule { MemberName = member, Inputs = inputs.ToList(), Operator = methodName };
+			return new Rule {MemberName = member, Inputs = inputs.ToList(), Operator = methodName};
 		}
 
-	public static Rule Method(string methodName, params object[] inputs)
+		public static Rule Method(string methodName, params object[] inputs)
 		{
-		return new Rule { Inputs = inputs.ToList(), Operator = methodName };
+			return new Rule {Inputs = inputs.ToList(), Operator = methodName};
 		}
 
-	public static Rule Any(string member, Rule rule)
-	{
-		return new Rule { MemberName = member, Operator = "Any", Rules = new List<Rule> { rule } };
-	}
+		public static Rule Any(string member, Rule rule)
+		{
+			return new Rule {MemberName = member, Operator = "Any", Rules = new List<Rule> {rule}};
+		}
 
-	public static Rule All(string member, Rule rule)
-	{
-		return new Rule { MemberName = member, Operator = "All", Rules = new List<Rule> { rule } };
-	}
+		public static Rule All(string member, Rule rule)
+		{
+			return new Rule {MemberName = member, Operator = "All", Rules = new List<Rule> {rule}};
+		}
 
 
 		public override string ToString()
 		{
-		if (TargetValue != null)
-			return $"{MemberName} {Operator} {TargetValue}";
+			if (TargetValue != null)
+				return $"{MemberName} {Operator} {TargetValue}";
 
-		if (Rules != null)
-		{
-			if (Rules.Count == 1)
-				return $"{MemberName} {Operator} ({Rules[0]})";
-			else
-				return $"{MemberName} {Operator} (Rules)";
+			if (Rules != null)
+			{
+				if (Rules.Count == 1)
+					return $"{MemberName} {Operator} ({Rules[0]})";
+				else
+					return $"{MemberName} {Operator} (Rules)";
+			}
+
+			if (Inputs != null)
+			{
+				return $"{MemberName} {Operator} (Inputs)";
+			}
+
+			return $"{MemberName} {Operator}";
 		}
-
-		if (Inputs != null)
-		{
-			return $"{MemberName} {Operator} (Inputs)";
 	}
 
-		return $"{MemberName} {Operator}";
-	}
-}
 	public class DataRule : Rule
 	{
 		public string Type { get; set; }
 
+		public static DataRule Create<T>(string member, mreOperator oper, T target)
+		{
+			return new DataRule
+			{
+				MemberName = member,
+				TargetValue = target,
+				Operator = oper.ToString(),
+				Type = typeof(T).FullName
+			};
+		}
+
 		public static DataRule Create<T>(string member, mreOperator oper, string target)
 		{
-			return new DataRule { MemberName = member, TargetValue = target, Operator = oper.ToString(), Type = typeof(T).FullName };
+			return new DataRule
+			{
+				MemberName = member,
+				TargetValue = target,
+				Operator = oper.ToString(),
+				Type = typeof(T).FullName
+			};
+		}
+
+
+		public static DataRule Create(string member, mreOperator oper, object target, Type memberType)
+		{
+			return new DataRule
+			{
+				MemberName = member,
+				TargetValue = target,
+				Operator = oper.ToString(),
+				Type = memberType.FullName
+			};
 		}
 	}
 
 	// Nothing specific to MRE.  Can be moved to a more common location
 	public static class Extensions
 	{
-		public static TOperand ApplyOperation<TOperand, TReturn>(this IEnumerable<TOperand> source, Func<TOperand, TOperand, TReturn> oper)
-			where TReturn : TOperand
-		{
-			using (var iter = source.GetEnumerator())
-			{
-				var more = iter.MoveNext();
-				if (!more)
-					throw new ArgumentOutOfRangeException("source", "Collection must have at least one item");
-
-				var lhs = iter.Current;
-				while (iter.MoveNext())
-				{
-					lhs = oper(lhs, iter.Current);
-				}
-
-				return lhs;
-			}
-		}
-
 		public static void AddRange<T>(this IList<T> collection, IEnumerable<T> newValues)
 		{
 			foreach (var item in newValues)
@@ -519,7 +534,7 @@ public class Rule
 		{
 		}
 
-		public RulesException(string message) :base(message)
+		public RulesException(string message) : base(message)
 		{
 		}
 
@@ -597,5 +612,7 @@ public class Rule
 		public List<Rule> Rules { get; set; }
 	}
 
-	public class RuleValueString : RuleValue<string> { }
+	public class RuleValueString : RuleValue<string>
+	{
+	}
 }

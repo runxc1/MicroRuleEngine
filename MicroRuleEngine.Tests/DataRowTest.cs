@@ -12,7 +12,7 @@ namespace MicroRuleEngine.Tests
         {
             var dr = GetDataRow();
 
-            Rule rule = DataRule.Create<int>("Column2", mreOperator.Equal, "123") & DataRule.Create<string>("Column1", mreOperator.Equal, "Test");
+            Rule rule = DataRule.Create<int>("Column2", mreOperator.Equal, 123) & DataRule.Create<string>("Column1", mreOperator.Equal, "Test");
 
             MRE engine = new MRE();
             var c1_123 = engine.CompileRule<DataRow>(rule);

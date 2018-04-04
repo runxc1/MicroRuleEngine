@@ -81,7 +81,7 @@ namespace MicroRuleEngine.Tests
         {
             Order order = ExampleUsage.GetOrder();
             order.Total = null;
-            Rule rule = Rule.Create("Total", mreOperator.NotEqual, null);
+            Rule rule = Rule.Create("Total", mreOperator.Equal, null);
 
             MRE engine = new MRE();
             var compiledRule = engine.CompileRule<Order>(rule);
@@ -113,7 +113,7 @@ namespace MicroRuleEngine.Tests
 
         class ArrayInside
         {
-            public double[] Dbl { get; }= new double[3] {1.111, 22.222, 333.333};
+            public double[] Dbl { get; }= {1.111, 22.222, 333.333};
         }
 
         [TestMethod]
