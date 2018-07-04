@@ -27,9 +27,19 @@ namespace MicroRuleEngine
 				Tuple.Create("Any", new Lazy<MethodInfo>(() => GetLinqMethod("Any", 2))),
 				Tuple.Create("All", new Lazy<MethodInfo>(() => GetLinqMethod("All", 2))),
 			};
+	    private static readonly Lazy<MethodInfo> _miIntTryParse = new Lazy<MethodInfo>(() =>
+	        typeof(Int32).GetMethod("TryParse", new Type[] { typeof(string), Type.GetType("System.Int32&") }));
 
+	    private static readonly Lazy<MethodInfo> _miFloatTryParse = new Lazy<MethodInfo>(() =>
+	        typeof(Single).GetMethod("TryParse", new Type[] { typeof(string), Type.GetType("System.Single&") }));
 
-		public Func<T, bool> CompileRule<T>(Rule r)
+	    private static readonly Lazy<MethodInfo> _miDoubleTryParse = new Lazy<MethodInfo>(() =>
+	        typeof(Double).GetMethod("TryParse", new Type[] { typeof(string), Type.GetType("System.Double&") }));
+
+	    private static readonly Lazy<MethodInfo> _miDecimalTryParse = new Lazy<MethodInfo>(() =>
+	        typeof(Decimal).GetMethod("TryParse", new Type[] { typeof(string), Type.GetType("System.Decimal&") }));
+
+        public Func<T, bool> CompileRule<T>(Rule r)
 		{
 			var paramUser = Expression.Parameter(typeof(T));
 			Expression expr = GetExpressionForRule(typeof(T), r, paramUser);
@@ -235,17 +245,45 @@ namespace MicroRuleEngine
 
 				return Expression.MakeBinary(tBinary, propExpression, right);
 			}
-			if (rule.Operator == "IsMatch")
-			{
-				return Expression.Call(
-					_miRegexIsMatch.Value,
-					propExpression,
-					Expression.Constant(rule.TargetValue, typeof(string)),
-					Expression.Constant(RegexOptions.IgnoreCase, typeof(RegexOptions))
-				);
-			}
 
-			var enumrOperation = IsEnumerableOperator(rule.Operator);
+		    switch (rule.Operator)
+		    {
+		        case "IsMatch":
+		            return Expression.Call(
+		                _miRegexIsMatch.Value,
+		                propExpression,
+		                Expression.Constant(rule.TargetValue, typeof(string)),
+		                Expression.Constant(RegexOptions.IgnoreCase, typeof(RegexOptions))
+		            );
+		        case "IsInteger":
+		            return Expression.Call(
+		                _miIntTryParse.Value,
+		                propExpression,
+		                Expression.MakeMemberAccess(null, typeof(Placeholder).GetField("Int"))
+		            );
+		        case "IsSingle":
+		            return Expression.Call(
+		                _miFloatTryParse.Value,
+		                propExpression,
+		                Expression.MakeMemberAccess(null, typeof(Placeholder).GetField("Float"))
+		            );
+		        case "IsDouble":
+		            return Expression.Call(
+		                _miDoubleTryParse.Value,
+		                propExpression,
+		                Expression.MakeMemberAccess(null, typeof(Placeholder).GetField("Double"))
+		            );
+		        case "IsDecimal":
+		            return Expression.Call(
+		                _miDecimalTryParse.Value,
+		                propExpression,
+		                Expression.MakeMemberAccess(null, typeof(Placeholder).GetField("Decimal"))
+		            );
+                default:
+                    break;
+		    }
+
+            var enumrOperation = IsEnumerableOperator(rule.Operator);
 			if (enumrOperation != null)
 			{
 				var elementType = ElementType(propType);
@@ -456,8 +494,15 @@ namespace MicroRuleEngine
 			return new Rule {MemberName = member, Operator = "All", Rules = new List<Rule> {rule}};
 		}
 
+	    public static Rule IsInteger(string member) => new Rule() {MemberName = member, Operator = "IsInteger"};
+	    public static Rule IsFloat(string member) => new Rule() { MemberName = member, Operator = "IsSingle" };
+	    public static Rule IsDouble(string member) => new Rule() { MemberName = member, Operator = "IsDouble" };
+	    public static Rule IsSingle(string member) => new Rule() { MemberName = member, Operator = "IsSingle" };
+	    public static Rule IsDecimal(string member) => new Rule() { MemberName = member, Operator = "IsDecimal" };
 
-		public override string ToString()
+
+
+        public override string ToString()
 		{
 			if (TargetValue != null)
 				return $"{MemberName} {Operator} {TargetValue}";
@@ -518,8 +563,16 @@ namespace MicroRuleEngine
 		}
 	}
 
-	// Nothing specific to MRE.  Can be moved to a more common location
-	public static class Extensions
+    internal static class Placeholder
+    {
+        public static int Int;
+        public static float Float;
+        public static double Double;
+        public static decimal Decimal;
+    }
+
+    // Nothing specific to MRE.  Can be moved to a more common location
+    public static class Extensions
 	{
 		public static void AddRange<T>(this IList<T> collection, IEnumerable<T> newValues)
 		{

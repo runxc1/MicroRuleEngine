@@ -32,7 +32,10 @@ DataRule.Create<int>("Column2", mreOperator.Equal, "123")
 ```csharp
 Rule rule = Rule.Create("Items[1].Cost", mreOperator.Equal, "*.Items[0].Cost");
 ```
- 
+  - Added tests for conversion of strings to numeric types: IsInt, IsFloat, IsDouble, IsDecimal
+ ```csharp
+Rule rule = Rule.IsInteger("Column3");
+ ```
 
  (end fork note)
 
