@@ -133,7 +133,7 @@ namespace MicroRuleEngine.Tests
             {
                 MemberName = "Items",// The array property
                 Operator = "Any",
-                Rules = new Rule[]
+                Rules = new[]
                 {
                      new Rule
                      {
@@ -233,7 +233,8 @@ namespace MicroRuleEngine.Tests
                     new Item { ItemCode = "Test", Cost=3.33M},
                 },
                 Total = 13.83m,
-                OrderDate = new DateTime(1776, 7, 4)
+                OrderDate = new DateTime(1776, 7, 4),
+                Status = Status.Open
 
             };
             return order;

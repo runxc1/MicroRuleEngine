@@ -4,6 +4,13 @@ using System.Linq;
 
 namespace MicroRuleEngine.Tests.Models
 {
+    public enum Status
+    {
+        Open,
+        Cancelled,
+        Completed
+    };
+
     public class Order
     {
         public Order()
@@ -19,6 +26,9 @@ namespace MicroRuleEngine.Tests.Models
         {
             return Items.Any(x => x.ItemCode == itemCode);
         }
+
+        public Status Status { get; set; }
+
     }
 
     public class Item

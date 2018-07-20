@@ -4,7 +4,6 @@ using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Runtime.InteropServices;
 using System.Runtime.Serialization;
 using System.Text.RegularExpressions;
 
@@ -69,7 +68,7 @@ namespace MicroRuleEngine
 			return Expression.Lambda<Func<object, bool>>(expr, paramUser).Compile();
 		}
 
-		// Build() is some forks
+		// Build() in some forks
 		protected static Expression GetExpressionForRule(Type type, Rule rule, ParameterExpression parameterExpression)
 		{
 			ExpressionType nestedOperator;
@@ -145,9 +144,8 @@ namespace MicroRuleEngine
 				{
 					var property = propertyType.GetProperty(childprop);
 					if (property == null)
-						throw new RulesException(String.Format("Cannot find property {0} in class {1} (\"{2}\")",
-							childprop,
-							propertyType.Name, propname));
+						throw new RulesException(
+						        $"Cannot find property {childprop} in class {propertyType.Name} (\"{propname}\")");
 					propExpression = Expression.PropertyOrField(propExpression, childprop);
 					propertyType = property.PropertyType;
 				}

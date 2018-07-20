@@ -93,6 +93,50 @@ namespace MicroRuleEngine.Tests
             Assert.IsFalse(passes);
         }
 
+        [TestMethod]
+        public void NullAsWord()
+        {
+            Order order = ExampleUsage.GetOrder();
+            order.Total = null;
+            Rule rule = Rule.Create("Total", mreOperator.Equal, "null");
+
+            MRE engine = new MRE();
+            var compiledRule = engine.CompileRule<Order>(rule);
+            bool passes = compiledRule(order);
+            Assert.IsTrue(passes);
+
+            order.Total = 9.99m;
+            passes = compiledRule(order);
+            Assert.IsFalse(passes);
+        }
+
+        [TestMethod]
+        public void EnumProperties()
+        {
+            Order order = ExampleUsage.GetOrder();
+            order.Total = null;
+            Rule rule = Rule.Create("Status", mreOperator.Equal, Status.Open);
+
+            MRE engine = new MRE();
+            var compiledRule = engine.CompileRule<Order>(rule);
+            bool passes = compiledRule(order);
+            Assert.IsTrue(passes);
+
+        }
+        [TestMethod]
+        public void EnumAsWord()
+        {
+            Order order = ExampleUsage.GetOrder();
+            order.Total = null;
+            Rule rule = Rule.Create("Status", mreOperator.Equal, "Open");
+
+            MRE engine = new MRE();
+            var compiledRule = engine.CompileRule<Order>(rule);
+            bool passes = compiledRule(order);
+            Assert.IsTrue(passes);
+
+        }
+
 
         [TestMethod]
         public void ArrayTest()

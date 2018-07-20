@@ -62,6 +62,7 @@
     <Compile Include="ExampleUsage.cs" />
     <Compile Include="DataRowTest.cs" />
     <Compile Include="SerializationTests.cs" />
+    <Compile Include="UnitTest1.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\MicroRuleEngine\MicroRuleEngine.csproj">
