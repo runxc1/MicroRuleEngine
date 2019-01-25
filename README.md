@@ -1,3 +1,5 @@
+[![Build status](https://ci.appveyor.com/api/projects/status/uy7o0ch628v8qa8d?svg=true)](https://ci.appveyor.com/project/jamescurran/microruleengine)
+
 MicroRuleEngine is a single file rule engine
 ============================================
 
