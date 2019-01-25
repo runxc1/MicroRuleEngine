@@ -66,7 +66,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\MicroRuleEngine\MicroRuleEngine.csproj">
-      <Project>{6E1FB0DF-3F83-48EE-BB33-A9C6BF09F911}</Project>
+      <Project>{c6f8fbce-8949-455a-ae4a-20a2b2012aee}</Project>
       <Name>MicroRuleEngine</Name>
     </ProjectReference>
   </ItemGroup>
