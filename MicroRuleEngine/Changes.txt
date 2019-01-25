@@ -1,2 +1,0 @@
-﻿mhujairi -  Aug 22, 2016 - Fixed the issue with null objects And added a version and assimbly information
-mhujairi -  Oct 20, 2016 - Support Building a rule by passing the object type
