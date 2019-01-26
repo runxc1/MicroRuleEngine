@@ -23,7 +23,7 @@ namespace MicroRuleEngine.Tests
 
         [TestMethod]
         [ExpectedException(typeof(RulesException))]
-        public void NotADataRow()
+        public void BadMethod()
         {
             Order order = ExampleUsage.GetOrder();
             Rule rule = Rule.MethodOnChild("Customer.FirstName", "NotAMethod", "ohn");
@@ -36,10 +36,10 @@ namespace MicroRuleEngine.Tests
 
         [TestMethod]
         [ExpectedException(typeof(RulesException))]
-        public void BAdMethod()
+        public void NotADataRow()
         {
             Order order = ExampleUsage.GetOrder();
-            Rule rule = DataRule.Create<int>("Column2", mreOperator.Equal, "123");
+            Rule rule = DataRule.Create<int>("Customer", mreOperator.Equal, "123");
 
             MRE engine = new MRE();
             var c1_123 = engine.CompileRule<Order>(rule);
@@ -47,6 +47,18 @@ namespace MicroRuleEngine.Tests
             Assert.IsTrue(false);       // should not get here.
         }
 
+        [TestMethod]
+        [ExpectedException(typeof(RulesException))]
+        public void NotACollection()
+        {
+            Order order = ExampleUsage.GetOrder();
+            Rule rule = Rule.Create("Customer[1]", mreOperator.Equal, "123");
+
+            MRE engine = new MRE();
+            var c1_123 = engine.CompileRule<Order>(rule);
+            bool passes = c1_123(order);
+            Assert.IsTrue(false);       // should not get here.
+        }
 
     }
 }
