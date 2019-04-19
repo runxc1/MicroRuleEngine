@@ -1,6 +1,4 @@
-﻿using System;
-using System.Data;
-using MicroRuleEngine.Tests.Models;
+﻿using MicroRuleEngine.Tests.Models;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace MicroRuleEngine.Tests
@@ -59,6 +57,5 @@ namespace MicroRuleEngine.Tests
             bool passes = c1_123(order);
             Assert.IsTrue(false);       // should not get here.
         }
-
     }
 }
