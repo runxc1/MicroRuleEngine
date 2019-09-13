@@ -2,7 +2,7 @@ mkdir content
 mkdir content\MRE
 
 copy ..\MicroRuleEngine\MRE.cs content\MRE
-NuGet pack MRE.nuspec -Exclude *.bat
-Nuget push MRE.1.0.1.nupkg
+nuget pack MRE.nuspec -Exclude *.bat
+nuget push MRE.1.0.2.nupkg -Source https://api.nuget.org/v3/index.json
 
 pause

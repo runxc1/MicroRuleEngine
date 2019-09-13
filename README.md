@@ -1,46 +1,5 @@
-[![Build status](https://ci.appveyor.com/api/projects/status/uy7o0ch628v8qa8d?svg=true)](https://ci.appveyor.com/project/jamescurran/microruleengine)
-
 MicroRuleEngine is a single file rule engine
 ============================================
-
-#### Fork Note:
-On this fork, I've added a new API, since the original is rather unwieldy.   With the new API, the Rule defined below in `ConditionalLogic()` can be written as:
-```csharp
-Rule rule = Rule.Create("Customer.LastName", mreOperator.Equal, "Doe")
-		 & (Rule.Create("Customer.FirstName", mreOperator.Equal, "John") | Rule.Create("Customer.FirstName", mreOperator.Equal, "Jane"));
-```
- NewApi.c in the UnitTest Project contains all the original unit tests re-written with the new API.
-
- I've also incorporated most additions from the various forks of this.  Two notabky exceptions are that I have
- not made MRE a static class (it seemed pointless, and prevents use of an IoC container), and I've left all the 
- source code in a single file (like the original author, I have a business need having it contained in a single file)
-
-Additionally, I've added unit tests/examples shows rules for testing integer & DateTime properties, and using 
-comparisons besides equality (These always worked; I just added demos of them).  Also, examples of 
-serializing/deserializing a Rule as XML and JSON.  (All these in the unit tests project)
-
- - the member property which are Arrays or List<>s (or  can now accept a integer index:
-```csharp
-Rule rule = Rule.Create("Items[1].Cost", mreOperator.Equal, "5.25");
-```
-
-- the new class `DataRule` allows defining rules which address ADO.NET DataSets:
-```csharp
-// (int)dataRow["Column2"] == 123
-DataRule.Create<int>("Column2", mreOperator.Equal, "123") 
-```
-
-- Add self-referential targets, indicated by the "*." at the beginning.
-```csharp
-Rule rule = Rule.Create("Items[1].Cost", mreOperator.Equal, "*.Items[0].Cost");
-```
-  - Added tests for conversion of strings to numeric types: IsInt, IsFloat, IsDouble, IsDecimal
- ```csharp
-Rule rule = Rule.IsInteger("Column3");
- ```
-
- (end fork note)
-
 
 A .Net Rule Engine for dynamically evaluating business rules compiled on the fly.  If you have business rules that you don't want to hard code then 
 the MicroRuleEngine is your friend.   The rule engine is easy to groc and is only about 2 hundred lines.  Under the covers it creates a Linq expression tree
@@ -78,7 +37,30 @@ Below is one of the tests.
 		}
 ```
 
-You'll want to look at the Test project but just to give another snippet here is an example of Conditional logic in a test
+What Kinds of Rules can I express
+--------------------------------
+In addition to comparative operators such as Equals, GreaterThan, LessThan etc.   You can also call methods on the object that return a boolean value
+such as Contains or StartsWith On a string. In addition to comparative operators additional operators such as "IsMatch" or "IsInteger" have been added
+and demonstrates how you could edit the code and add your own operator. Rules can also be ANDed or ORed together as shown below.
+
+```csharp
+
+Rule rule = Rule.Create("Customer.LastName", "Contains", "Do")
+		 & (Rule.Create("Customer.FirstName", "StartsWith", "Jo"));
+
+```
+
+You can reference member properties which are Arrays or List<> by their index
+```csharp
+Rule rule = Rule.Create("Items[1].Cost", mreOperator.GreaterThanOrEqual, "5.25");
+```
+
+You can also compare an object to itself indicated by the "*." at the beginning of the TargetValue shown below
+```csharp
+Rule rule = Rule.Create("Items[1].Cost", mreOperator.Equal, "*.Items[0].Cost");
+```
+
+There are a lot of examples in the Test cases but here is another snippet demonstrating nested OR logic
 
 ```csharp
 		[TestMethod]
@@ -111,6 +93,15 @@ You'll want to look at the Test project but just to give another snippet here is
 		}
 ```
 
+If you need to run your comparison against an ADO.NET DataSet you can also do that as well.
+
+```csharp
+Rule rule = Rule.Create("Items[1].Cost", mreOperator.Equal, "*.Items[0].Cost");
+```
+
 How do I store Rules?
 ---------------------
 The Rule Class is just a POCO so you can store your rules as serialized XML, JSON etc.
+
+#### Forked many times and now updated to pull in a lot of the great work done by jamescurran, nazimkov and others that help improve the API
+
