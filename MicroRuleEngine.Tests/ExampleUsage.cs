@@ -232,6 +232,12 @@ namespace MicroRuleEngine.Tests
                     new Item { ItemCode = "LD45", Cost=5.25M},
                     new Item { ItemCode = "Test", Cost=3.33M},
                 },
+                Codes = new List<int>()
+                {
+                    555,
+                    321,
+                    243
+                },
                 Total = 13.83m,
                 OrderDate = new DateTime(1776, 7, 4),
                 Status = Status.Open

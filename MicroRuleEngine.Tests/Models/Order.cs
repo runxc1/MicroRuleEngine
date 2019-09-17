@@ -28,7 +28,7 @@ namespace MicroRuleEngine.Tests.Models
         }
 
         public Status Status { get; set; }
-
+        public List<int> Codes { get; set; }
     }
 
     public class Item

@@ -34,7 +34,7 @@ namespace MicroRuleEngine.Tests
             using (var reader = new StringReader(text))
             using (var xr = XmlReader.Create(reader))
             {
-                newRule = (Rule) serializer.ReadObject(xr);
+                newRule = (Rule)serializer.ReadObject(xr);
             }
 
             var order = ExampleUsage.GetOrder();
@@ -75,7 +75,7 @@ namespace MicroRuleEngine.Tests
 
             using (var stream2 = new MemoryStream(Encoding.UTF8.GetBytes(text)))
             {
-                newRule = (Rule) serializer.ReadObject(stream2);
+                newRule = (Rule)serializer.ReadObject(stream2);
             }
 
             var order = ExampleUsage.GetOrder();
@@ -90,5 +90,25 @@ namespace MicroRuleEngine.Tests
             Assert.IsFalse(passes);
         }
 
+        [TestMethod]
+        public void JsonVisualizationTest()
+        {
+            var order = ExampleUsage.GetOrder();
+            var members = MRE.Member.GetFields(order.GetType());
+            var serializer = new DataContractJsonSerializer(members.GetType());
+
+            string text;
+
+            using (var stream1 = new MemoryStream())
+            {
+
+                serializer.WriteObject(stream1, members);
+
+                stream1.Position = 0;
+                var sr = new StreamReader(stream1);
+                text = sr.ReadToEnd();
+            }
+            Assert.IsTrue(text.Length > 100);
+        }
     }
 }

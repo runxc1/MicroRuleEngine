@@ -301,15 +301,31 @@ namespace MicroRuleEngine
 			{
 				var inputs = rule.Inputs.Select(x => x.GetType()).ToArray();
 				var methodInfo = propType.GetMethod(rule.Operator, inputs);
-				if (methodInfo == null)
+                List<Expression> expressions = new List<Expression>();
+                
+                if (methodInfo == null)
+                {
+                    methodInfo = propType.GetMethod(rule.Operator);
+                    if (methodInfo != null) {
+                        var parameters = methodInfo.GetParameters();
+                        foreach (var item in rule.Inputs.Select((value, i) => (value, i)))
+                        {
+                            expressions.Add(MRE.StringToExpression(item.value, parameters[item.i].ParameterType));
+                        }
+                     }
+                }
+                else
+                    expressions.AddRange(rule.Inputs.Select(Expression.Constant));
+                if (methodInfo == null)
 					throw new RulesException($"'{rule.Operator}' is not a method of '{propType.Name}");
+                
 
 				if (!methodInfo.IsGenericMethod)
 					inputs = null; //Only pass in type information to a Generic Method
-				var expressions = rule.Inputs.Select(Expression.Constant).ToArray();
+                
 
 				return Expression.TryCatch(
-					Expression.Block(typeof(bool), Expression.Call(propExpression, rule.Operator, inputs, expressions)),
+					Expression.Block(typeof(bool), Expression.Call(propExpression, rule.Operator, inputs, expressions.ToArray())),
 					Expression.Catch(typeof(NullReferenceException), Expression.Constant(false))
 				);
 			}
@@ -411,9 +427,114 @@ namespace MicroRuleEngine
 
 			return null;
 		}
-	}
+        public enum OperatorType
+        {
+            InternalString = 1,
+            ObjectMethod = 2,
+            Comparison = 3
+        }
+        public class Operator
+        {
+            public string Name { get; set; }
+            public OperatorType Type { get; set; }
+            public int NumberOfInputs { get; set; }
+            public bool SimpleInputs { get; set; }
+        }
+        public class Member
+        {
+            public string Name { get; set; }
+            public string Type { get; set; }
+            public List<Operator> PossibleOperators { get; set; }
+            public static bool IsSimpleType(Type type)
+            {
+                return
+                    type.IsPrimitive ||
+                    new Type[] {
+                        typeof(Enum),
+                        typeof(String),
+                        typeof(Decimal),
+                        typeof(DateTime),
+                        typeof(DateTimeOffset),
+                        typeof(TimeSpan),
+                        typeof(Guid)
+                    }.Contains(type) ||
+                    Convert.GetTypeCode(type) != TypeCode.Object ||
+                    (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>) && IsSimpleType(type.GetGenericArguments()[0]))
+                    ;
+            }
+            public static BindingFlags flags = BindingFlags.Instance | BindingFlags.Public;
+            public static List<Member> GetFields(System.Type type, string memberName = null, string parentPath =null)
+            {
+                List<Member> toReturn = new List<Member>();
+                var fi = new Member();
+                fi.Name = string.IsNullOrEmpty(parentPath) ? memberName : $"{parentPath}.{memberName}";
+                fi.Type = type.ToString();
+                fi.PossibleOperators = Member.Operators(type);
+                toReturn.Add(fi);
+                if (!Member.IsSimpleType(type))
+                {
+                    var fields = type.GetFields(Member.flags);
+                    var properties = type.GetProperties(Member.flags);
+                    foreach (var field in fields)
+                    {
+                        toReturn.AddRange(GetFields(field.FieldType, field.Name, fi.Name));
+                    }
+                    foreach (var prop in properties)
+                    {
+                        toReturn.AddRange(GetFields(prop.PropertyType, prop.Name, fi.Name));
+                    }
+                }
+                return toReturn;
+            }
+            private static string[] standardOperators = new string[] {
+                    mreOperator.Equal.ToString("g"),
+                    mreOperator.GreaterThan.ToString("g"),
+                    mreOperator.GreaterThanOrEqual.ToString("g"),
+                    mreOperator.LessThan.ToString("g"),
+                    mreOperator.LessThanOrEqual.ToString("g"),
+                    mreOperator.NotEqual.ToString("g"),
+                };
 
-	[DataContract]
+            private static string[] hardCodedStringOperators = new string[] {
+                    mreOperator.IsMatch.ToString("g"),
+                    mreOperator.IsInteger.ToString("g"),
+                    mreOperator.IsSingle.ToString("g"),
+                    mreOperator.IsDouble.ToString("g"),
+                    mreOperator.IsDecimal.ToString("g")
+                };
+            public static List<Operator> Operators(System.Type type)
+            {
+                List<Operator> operators = new List<Operator>();
+                if (Member.IsSimpleType(type))
+                {
+                    operators.AddRange(standardOperators.Select(x=> new Operator() { Name = x, Type = OperatorType.Comparison }) );
+                }
+                if (type == typeof(String))
+                {
+                    operators.AddRange(hardCodedStringOperators.Select(x => new Operator() { Name = x, Type = OperatorType.InternalString }));
+                }
+                var methods = type.GetMethods();
+                foreach (var method in methods)
+                {
+                    if (method.ReturnType == typeof(Boolean))
+                    {
+                        var paramaters = method.GetParameters();
+                        operators.Add(new Operator()
+                        {
+                            Name = method.Name,
+                            Type = OperatorType.ObjectMethod,
+                            NumberOfInputs = paramaters.Length,
+                            SimpleInputs = paramaters.All(x => Member.IsSimpleType(x.ParameterType))
+                        });
+                    }
+                }
+                return operators;
+            }
+        }
+
+    }
+
+    [DataContract]
 	public class Rule
 	{
 		public Rule()
@@ -652,9 +773,27 @@ namespace MicroRuleEngine
 		//     A short-circuiting conditional OR operation, such as (a || b) in C# or (a OrElse
 		//     b) in Visual Basic.
 		OrElse = 37,
-
-		IsMatch
-	}
+        /// <summary>
+        /// Checks that a string value matches a Regex expression
+        /// </summary>
+		IsMatch = 100,
+        /// <summary>
+        /// Checks that a value can be 'TryParsed' to an Int32
+        /// </summary>
+        IsInteger = 101,
+        /// <summary>
+        /// Checks that a value can be 'TryParsed' to a Single
+        /// </summary>
+        IsSingle = 102,
+        /// <summary>
+        /// Checks that a value can be 'TryParsed' to a Double
+        /// </summary>
+        IsDouble = 103,
+        /// <summary>
+        /// Checks that a value can be 'TryParsed' to a Decimal
+        /// </summary>
+        IsDecimal = 104
+}
 
 
 	public class RuleValue<T>
