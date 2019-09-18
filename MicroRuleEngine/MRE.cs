@@ -314,9 +314,11 @@ namespace MicroRuleEngine
                     if (methodInfo != null)
                     {
                         var parameters = methodInfo.GetParameters();
-                        foreach (var item in rule.Inputs.Select((value, i) => (value, i)))
+                        int i = 0;
+                        foreach (var item in rule.Inputs)
                         {
-                            expressions.Add(MRE.StringToExpression(item.value, parameters[item.i].ParameterType));
+                            expressions.Add(MRE.StringToExpression(item, parameters[i].ParameterType));
+                            i++;
                         }
                     }
                 }
