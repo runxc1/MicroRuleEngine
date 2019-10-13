@@ -4,7 +4,6 @@ using System.Linq;
 using System.Linq.Expressions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using MicroRuleEngine.Core.Tests.Models;
-using System.Reflection;
 
 namespace MicroRuleEngine.Tests
 {

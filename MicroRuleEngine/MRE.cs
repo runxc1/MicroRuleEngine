@@ -45,6 +45,30 @@ namespace MicroRuleEngine
 
             return Expression.Lambda<Func<T, bool>>(expr, paramUser).Compile();
         }
+        public static Expression<Func<T, bool>> ToExpression<T>(Rule r, bool useTryCatchForNulls = true)
+        {
+            var paramUser = Expression.Parameter(typeof(T));
+            Expression expr = GetExpressionForRule(typeof(T), r, paramUser, useTryCatchForNulls);
+
+            return Expression.Lambda<Func<T, bool>>(expr, paramUser);
+        }
+
+        public static Func<T, bool> ToFunc<T>(Rule r, bool useTryCatchForNulls = true)
+        {
+            return ToExpression<T>(r, useTryCatchForNulls).Compile();
+        }
+        public static Expression<Func<object, bool>> ToExpression(Type type, Rule r)
+        {
+            var paramUser = Expression.Parameter(typeof(object));
+            Expression expr = GetExpressionForRule(type, r, paramUser);
+
+            return Expression.Lambda<Func<object, bool>>(expr, paramUser);
+        }
+
+        public static Func<object, bool> ToFunc(Type type, Rule r)
+        {
+            return ToExpression(type, r).Compile();
+        }
 
         public Func<object, bool> CompileRule(Type type, Rule r)
         {
@@ -69,20 +93,20 @@ namespace MicroRuleEngine
         }
 
         // Build() in some forks
-        protected static Expression GetExpressionForRule(Type type, Rule rule, ParameterExpression parameterExpression)
+        protected static Expression GetExpressionForRule(Type type, Rule rule, ParameterExpression parameterExpression, bool useTryCatchForNulls = true)
         {
             ExpressionType nestedOperator;
             if (ExpressionType.TryParse(rule.Operator, out nestedOperator) &&
                 _nestedOperators.Contains(nestedOperator) && rule.Rules != null && rule.Rules.Any())
-                return BuildNestedExpression(type, rule.Rules, parameterExpression, nestedOperator);
+                return BuildNestedExpression(type, rule.Rules, parameterExpression, nestedOperator, useTryCatchForNulls);
             else
-                return BuildExpr(type, rule, parameterExpression);
+                return BuildExpr(type, rule, parameterExpression, useTryCatchForNulls);
         }
 
         protected static Expression BuildNestedExpression(Type type, IEnumerable<Rule> rules, ParameterExpression param,
-            ExpressionType operation)
+            ExpressionType operation, bool useTryCatchForNulls = true)
         {
-            var expressions = rules.Select(r => GetExpressionForRule(type, r, param));
+            var expressions = rules.Select(r => GetExpressionForRule(type, r, param, useTryCatchForNulls));
             return BinaryExpression(expressions, operation);
         }
 
@@ -198,7 +222,7 @@ namespace MicroRuleEngine
                     select tup.Item2.Value).FirstOrDefault();
         }
 
-        private static Expression BuildExpr(Type type, Rule rule, Expression param)
+        private static Expression BuildExpr(Type type, Rule rule, Expression param, bool useTryCatch = true)
         {
             Expression propExpression;
             Type propType;
@@ -226,11 +250,14 @@ namespace MicroRuleEngine
                 propExpression = GetProperty(param, rule.MemberName);
                 propType = propExpression.Type;
             }
+            if (useTryCatch)
+            {
+                propExpression = Expression.TryCatch(
+                    Expression.Block(propExpression.Type, propExpression),
+                    Expression.Catch(typeof(NullReferenceException), Expression.Default(propExpression.Type))
+                );
+            }
 
-            propExpression = Expression.TryCatch(
-                Expression.Block(propExpression.Type, propExpression),
-                Expression.Catch(typeof(NullReferenceException), Expression.Default(propExpression.Type))
-            );
             // is the operator a known .NET operator?
             ExpressionType tBinary;
 
@@ -330,12 +357,16 @@ namespace MicroRuleEngine
 
                 if (!methodInfo.IsGenericMethod)
                     inputs = null; //Only pass in type information to a Generic Method
-
-
-                return Expression.TryCatch(
-                    Expression.Block(typeof(bool), Expression.Call(propExpression, rule.Operator, inputs, expressions.ToArray())),
+                var callExpression = Expression.Call(propExpression, rule.Operator, inputs, expressions.ToArray());
+                if (useTryCatch)
+                {
+                    return Expression.TryCatch(
+                    Expression.Block(typeof(bool), callExpression),
                     Expression.Catch(typeof(NullReferenceException), Expression.Constant(false))
-                );
+                    );
+                }
+                else
+                    return callExpression;
             }
         }
 
@@ -381,6 +412,11 @@ namespace MicroRuleEngine
                     safevalue = null;
                 else if (propType.IsEnum)
                     safevalue = Enum.Parse(propType, txt);
+                else if (propType.Name == "Nullable`1")
+                {
+                    valuetype = Nullable.GetUnderlyingType(propType);
+                    safevalue = Convert.ChangeType(value, valuetype);
+                }
                 else
                     safevalue = Convert.ChangeType(value, valuetype);
             }
@@ -553,34 +589,47 @@ namespace MicroRuleEngine
                     mreOperator.IsDouble.ToString("g"),
                     mreOperator.IsDecimal.ToString("g")
                 };
-            public static List<Operator> Operators(System.Type type, bool addLogicOperators = false)
+            public static List<Operator> Operators(System.Type type, bool addLogicOperators = false, bool noOverloads = true)
             {
                 List<Operator> operators = new List<Operator>();
                 if (addLogicOperators)
                 {
                     operators.AddRange(logicOperators.Select(x => new Operator() { Name = x, Type = OperatorType.Logic }));
                 }
-                if (Member.IsSimpleType(type))
-                {
-                    operators.AddRange(comparisonOperators.Select(x => new Operator() { Name = x, Type = OperatorType.Comparison }));
-                }
+
                 if (type == typeof(String))
                 {
                     operators.AddRange(hardCodedStringOperators.Select(x => new Operator() { Name = x, Type = OperatorType.InternalString }));
                 }
-                var methods = type.GetMethods();
+                else if (Member.IsSimpleType(type))
+                {
+                    operators.AddRange(comparisonOperators.Select(x => new Operator() { Name = x, Type = OperatorType.Comparison }));
+                }
+                var methods = type.GetMethods(BindingFlags.Public | BindingFlags.Instance);
                 foreach (var method in methods)
                 {
-                    if (method.ReturnType == typeof(Boolean))
+                    if (method.ReturnType == typeof(Boolean) && !method.Name.StartsWith("get_") && !method.Name.StartsWith("set_") && !method.Name.StartsWith("_op"))
                     {
                         var paramaters = method.GetParameters();
-                        operators.Add(new Operator()
+                        var op = new Operator()
                         {
                             Name = method.Name,
                             Type = OperatorType.ObjectMethod,
                             NumberOfInputs = paramaters.Length,
                             SimpleInputs = paramaters.All(x => Member.IsSimpleType(x.ParameterType))
-                        });
+                        };
+                        if (noOverloads)
+                        {
+                            var existing = operators.FirstOrDefault(x => x.Name == op.Name && x.Type == op.Type);
+                            if (existing == null)
+                                operators.Add(op);
+                            else if (existing.NumberOfInputs > op.NumberOfInputs)
+                            {
+                                operators[operators.IndexOf(existing)] = op;
+                            }
+                        }
+                        else
+                            operators.Add(op);
                     }
                 }
                 return operators;
