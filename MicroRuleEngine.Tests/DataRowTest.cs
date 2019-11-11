@@ -12,16 +12,16 @@ namespace MicroRuleEngine.Tests
         {
             var dr = GetDataRow();
             // (int) dr["Column2"] == 123 &&  (string) dr["Column1"] == "Test"
-            Rule rule = DataRule.Create<int>("Column2", mreOperator.Equal, "123") & DataRule.Create<string>("Column1", mreOperator.Equal, "Test");
+            Rule rule = DataRule.Create<int>("Column2", MreOperator.Equal, "123") & DataRule.Create<string>("Column1", MreOperator.Equal, "Test");
 
-            MRE engine = new MRE();
-            var c1_123 = engine.CompileRule<DataRow>(rule);
-            bool passes = c1_123(dr);
+            Mre engine = new Mre();
+            var c1123 = engine.CompileRule<DataRow>(rule);
+            bool passes = c1123(dr);
             Assert.IsTrue(passes);
 
             dr["Column2"] = 456;
             dr["Column1"] = "Hello";
-            passes = c1_123(dr);
+            passes = c1123(dr);
             Assert.IsFalse(passes);
         }
 
@@ -32,39 +32,39 @@ namespace MicroRuleEngine.Tests
         {
             var dt = CreateEmptyDataTable();
 
-            Rule rule = DataRule.Create("Column2", mreOperator.Equal, 123, dt.Columns["Column2"].DataType);
+            Rule rule = DataRule.Create("Column2", MreOperator.Equal, 123, dt.Columns["Column2"].DataType);
 
-            MRE engine = new MRE();
-            var c1_123 = engine.CompileRule<DataRow>(rule);
+            Mre engine = new Mre();
+            var c1123 = engine.CompileRule<DataRow>(rule);
 
             var dr = GetDataRow(dt);
-            bool passes = c1_123(dr);
+            bool passes = c1123(dr);
             Assert.IsTrue(passes);
 
             dr["Column2"] = 456;
             dr["Column1"] = "Hello";
-            passes = c1_123(dr);
+            passes = c1123(dr);
             Assert.IsFalse(passes);
         }
 
         [TestMethod]
         public void DataRowTest_DBNull()
         {
-            Rule rule = DataRule.Create<int?>("Column2", mreOperator.Equal, (int?) null) &
-                        DataRule.Create<string>("Column1", mreOperator.Equal, null);
+            Rule rule = DataRule.Create<int?>("Column2", MreOperator.Equal, (int?) null) &
+                        DataRule.Create<string>("Column1", MreOperator.Equal, null);
 
-            MRE engine = new MRE();
-            var c1_123 = engine.CompileRule<DataRow>(rule);
+            Mre engine = new Mre();
+            var c1123 = engine.CompileRule<DataRow>(rule);
 
             var dt = CreateEmptyDataTable();
-            var dr = GetDataRowDBNull(dt);
+            var dr = GetDataRowDbNull(dt);
 
-            bool passes = c1_123(dr);
+            bool passes = c1123(dr);
             Assert.IsTrue(passes);
 
             dr["Column2"] = 456;
             dr["Column1"] = "Hello";
-            passes = c1_123(dr);
+            passes = c1123(dr);
             Assert.IsFalse(passes);
         }
 
@@ -82,14 +82,14 @@ namespace MicroRuleEngine.Tests
                 MemberName = "Column2"
             };
 
-            MRE engine = new MRE();
-            var c1_123 = engine.CompileRule<DataRow>(rule);
-            bool passes = c1_123(dr);
+            Mre engine = new Mre();
+            var c1123 = engine.CompileRule<DataRow>(rule);
+            bool passes = c1123(dr);
             Assert.IsTrue(passes);
 
             dr["Column2"] = 456;
             dr["Column1"] = "Hello";
-            passes = c1_123(dr);
+            passes = c1123(dr);
             Assert.IsFalse(passes);
         }
 
@@ -111,7 +111,7 @@ namespace MicroRuleEngine.Tests
             return dr;
         }
 
-        DataRow GetDataRowDBNull(DataTable dt = null)
+        DataRow GetDataRowDbNull(DataTable dt = null)
         {
             dt = dt ?? CreateEmptyDataTable();
             var dr = dt.NewRow();

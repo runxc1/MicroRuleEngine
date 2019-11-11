@@ -15,9 +15,9 @@ namespace MicroRuleEngine.Tests
         public void ChildProperties2()
         {
             Order order = ExampleUsage.GetOrder();
-            Rule rule = Rule.Create("Customer.Country.CountryCode", mreOperator.Equal, "AUS");
+            Rule rule = Rule.Create("Customer.Country.CountryCode", MreOperator.Equal, "AUS");
     
-            MRE engine = new MRE();
+            Mre engine = new Mre();
             var compiledRule = engine.CompileRule<Order>(rule);
             bool passes = compiledRule(order);
             Assert.IsTrue(passes);
@@ -31,9 +31,9 @@ namespace MicroRuleEngine.Tests
         public void IntProperties()
         {
             Order order = ExampleUsage.GetOrder();
-            Rule rule = Rule.Create("OrderId", mreOperator.Equal, 1);
+            Rule rule = Rule.Create("OrderId", MreOperator.Equal, 1);
 
-            MRE engine = new MRE();
+            Mre engine = new Mre();
             var compiledRule = engine.CompileRule<Order>(rule);
             bool passes = compiledRule(order);
             Assert.IsTrue(passes);
@@ -48,9 +48,9 @@ namespace MicroRuleEngine.Tests
         public void DateProperties()
         {
             Order order = ExampleUsage.GetOrder();
-            Rule rule = Rule.Create("OrderDate", mreOperator.LessThan, "1800-01-01");
+            Rule rule = Rule.Create("OrderDate", MreOperator.LessThan, "1800-01-01");
 
-            MRE engine = new MRE();
+            Mre engine = new Mre();
             var compiledRule = engine.CompileRule<Order>(rule);
             bool passes = compiledRule(order);
             Assert.IsTrue(passes);
@@ -64,9 +64,9 @@ namespace MicroRuleEngine.Tests
         public void DecimalProperties()
         {
             Order order = ExampleUsage.GetOrder();
-            Rule rule = Rule.Create("Total", mreOperator.GreaterThan, 12.00m);
+            Rule rule = Rule.Create("Total", MreOperator.GreaterThan, 12.00m);
 
-            MRE engine = new MRE();
+            Mre engine = new Mre();
             var compiledRule = engine.CompileRule<Order>(rule);
             bool passes = compiledRule(order);
             Assert.IsTrue(passes);
@@ -81,9 +81,9 @@ namespace MicroRuleEngine.Tests
         {
             Order order = ExampleUsage.GetOrder();
             order.Total = null;
-            Rule rule = Rule.Create("Total", mreOperator.Equal, null);
+            Rule rule = Rule.Create("Total", MreOperator.Equal, null);
 
-            MRE engine = new MRE();
+            Mre engine = new Mre();
             var compiledRule = engine.CompileRule<Order>(rule);
             bool passes = compiledRule(order);
             Assert.IsTrue(passes);
@@ -98,9 +98,9 @@ namespace MicroRuleEngine.Tests
         {
             Order order = ExampleUsage.GetOrder();
             order.Total = null;
-            Rule rule = Rule.Create("Total", mreOperator.Equal, "null");
+            Rule rule = Rule.Create("Total", MreOperator.Equal, "null");
 
-            MRE engine = new MRE();
+            Mre engine = new Mre();
             var compiledRule = engine.CompileRule<Order>(rule);
             bool passes = compiledRule(order);
             Assert.IsTrue(passes);
@@ -115,9 +115,9 @@ namespace MicroRuleEngine.Tests
         {
             Order order = ExampleUsage.GetOrder();
             order.Total = null;
-            Rule rule = Rule.Create("Status", mreOperator.Equal, Status.Open);
+            Rule rule = Rule.Create("Status", MreOperator.Equal, Status.Open);
 
-            MRE engine = new MRE();
+            Mre engine = new Mre();
             var compiledRule = engine.CompileRule<Order>(rule);
             bool passes = compiledRule(order);
             Assert.IsTrue(passes);
@@ -128,9 +128,9 @@ namespace MicroRuleEngine.Tests
         {
             Order order = ExampleUsage.GetOrder();
             order.Total = null;
-            Rule rule = Rule.Create("Status", mreOperator.Equal, "Open");
+            Rule rule = Rule.Create("Status", MreOperator.Equal, "Open");
 
-            MRE engine = new MRE();
+            Mre engine = new Mre();
             var compiledRule = engine.CompileRule<Order>(rule);
             bool passes = compiledRule(order);
             Assert.IsTrue(passes);
@@ -143,9 +143,9 @@ namespace MicroRuleEngine.Tests
         {
             var  array = new ArrayInside();
 
-            Rule rule = Rule.Create("Dbl[1]", mreOperator.Equal, 22.222);
+            Rule rule = Rule.Create("Dbl[1]", MreOperator.Equal, 22.222);
 
-            MRE engine = new MRE();
+            Mre engine = new Mre();
             var compiledRule = engine.CompileRule<ArrayInside>(rule);
             bool passes = compiledRule(array);
             Assert.IsTrue(passes);
@@ -165,9 +165,9 @@ namespace MicroRuleEngine.Tests
         {
             Order order = ExampleUsage.GetOrder();
 
-            Rule rule = Rule.Create("Items[1].Cost", mreOperator.Equal, 5.25m);
+            Rule rule = Rule.Create("Items[1].Cost", MreOperator.Equal, 5.25m);
 
-            MRE engine = new MRE();
+            Mre engine = new Mre();
             var compiledRule = engine.CompileRule<Order>(rule);
             bool passes = compiledRule(order);
             Assert.IsTrue(passes);
@@ -182,9 +182,9 @@ namespace MicroRuleEngine.Tests
         {
             Order order = ExampleUsage.GetOrder();
 
-            Rule rule = Rule.Create("Items[1].Cost", mreOperator.Equal, "*.Items[0].Cost");
+            Rule rule = Rule.Create("Items[1].Cost", MreOperator.Equal, "*.Items[0].Cost");
 
-            MRE engine = new MRE();
+            Mre engine = new Mre();
             var compiledRule = engine.CompileRule<Order>(rule);
             bool passes = compiledRule(order);
             Assert.IsTrue(passes);
@@ -198,10 +198,10 @@ namespace MicroRuleEngine.Tests
         public void ConditionalLogic2()
         {
             Order order = ExampleUsage.GetOrder();
-            Rule rule = Rule.Create("Customer.LastName", mreOperator.Equal, "Doe")
-                          & (Rule.Create("Customer.FirstName", mreOperator.Equal, "John") | Rule.Create("Customer.FirstName", mreOperator.Equal, "Jane"));
+            Rule rule = Rule.Create("Customer.LastName", MreOperator.Equal, "Doe")
+                          & (Rule.Create("Customer.FirstName", MreOperator.Equal, "John") | Rule.Create("Customer.FirstName", MreOperator.Equal, "Jane"));
 
-            MRE engine = new MRE();
+            Mre engine = new Mre();
             var fakeName = engine.CompileRule<Order>(rule);
             bool passes = fakeName(order);
             Assert.IsTrue(passes);
@@ -219,7 +219,7 @@ namespace MicroRuleEngine.Tests
             //The Order Object Contains a method named 'HasItem(string itemCode)' that returns true/false
             Rule rule = Rule.Method("HasItem", "Test");
 
-            MRE engine = new MRE();
+            Mre engine = new Mre();
             var boolMethod = engine.CompileRule<Order>(rule);
             bool passes = boolMethod(order);
             Assert.IsTrue(passes);
@@ -237,7 +237,7 @@ namespace MicroRuleEngine.Tests
             //Regular method that exists on string.. As a note expression methods are not available
             Rule rule = Rule.MethodOnChild("Customer.FirstName", "EndsWith", "ohn");
 
-            MRE engine = new MRE();
+            Mre engine = new Mre();
             var childPropCheck = engine.CompileRule<Order>(rule);
             bool passes = childPropCheck(order);
             Assert.IsTrue(passes);
@@ -252,9 +252,9 @@ namespace MicroRuleEngine.Tests
         {
             Order order = ExampleUsage.GetOrder();
             // Regex = Capital letter, vowel, then two constanants  ("John" passes, "Jane" fails)
-            Rule rule = Rule.Create("Customer.FirstName", mreOperator.IsMatch, @"^[A-Z][aeiou][bcdfghjklmnpqrstvwxyz]{2}$");
+            Rule rule = Rule.Create("Customer.FirstName", MreOperator.IsMatch, @"^[A-Z][aeiou][bcdfghjklmnpqrstvwxyz]{2}$");
  
-            MRE engine = new MRE();
+            Mre engine = new Mre();
             var regexCheck = engine.CompileRule<Order>(rule);
             bool passes = regexCheck(order);
             Assert.IsTrue(passes);
@@ -269,9 +269,9 @@ namespace MicroRuleEngine.Tests
         {
             Order order = ExampleUsage.GetOrder();
             //order.Items.Any(a => a.ItemCode == "test")
-            Rule rule = Rule.Any("Items", Rule.Create("ItemCode", mreOperator.Equal, "Test"));
+            Rule rule = Rule.Any("Items", Rule.Create("ItemCode", MreOperator.Equal, "Test"));
 
-            MRE engine = new MRE();
+            Mre engine = new Mre();
             var boolMethod = engine.CompileRule<Order>(rule);
             bool passes = boolMethod(order);
             Assert.IsTrue(passes);
@@ -288,9 +288,9 @@ namespace MicroRuleEngine.Tests
         {
             Order order = ExampleUsage.GetOrder();
             //order.Items.All(a => a.Cost > 2.00m)
-            Rule rule = Rule.All("Items", Rule.Create("Cost", mreOperator.GreaterThan, "2.00"));
+            Rule rule = Rule.All("Items", Rule.Create("Cost", MreOperator.GreaterThan, "2.00"));
 
-            MRE engine = new MRE();
+            Mre engine = new Mre();
             var boolMethod = engine.CompileRule<Order>(rule);
             bool passes = boolMethod(order);
             Assert.IsTrue(passes);
@@ -304,9 +304,9 @@ namespace MicroRuleEngine.Tests
         [TestMethod]
         public void Prebuild2()
         {
-            MRE engine = new MRE();
+            Mre engine = new Mre();
             Rule rule1 = Rule.MethodOnChild("Customer.FirstName", "EndsWith", "ohn");
-            Rule rule2 = Rule.Create("Customer.Country.CountryCode", mreOperator.Equal, "AUS");
+            Rule rule2 = Rule.Create("Customer.Country.CountryCode", MreOperator.Equal, "AUS");
 
             var endsWithOhn = engine.CompileRule<Order>(rule1);
             var inAus = engine.CompileRule<Order>(rule2);

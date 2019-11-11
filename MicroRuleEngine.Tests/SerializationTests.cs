@@ -20,9 +20,9 @@ namespace MicroRuleEngine.Tests
 
             using (var writer = new StringWriter())
             {
-                Rule rule = Rule.Create("Customer.LastName", mreOperator.Equal, "Doe")
-                            & (Rule.Create("Customer.FirstName", mreOperator.Equal, "John")
-                               | Rule.Create("Customer.FirstName", mreOperator.Equal, "Jane"));
+                Rule rule = Rule.Create("Customer.LastName", MreOperator.Equal, "Doe")
+                            & (Rule.Create("Customer.FirstName", MreOperator.Equal, "John")
+                               | Rule.Create("Customer.FirstName", MreOperator.Equal, "Jane"));
 
                 using (var xw = XmlWriter.Create(writer))
                     serializer.WriteObject(xw, rule);
@@ -39,7 +39,7 @@ namespace MicroRuleEngine.Tests
 
             var order = ExampleUsage.GetOrder();
 
-            MRE engine = new MRE();
+            Mre engine = new Mre();
             var fakeName = engine.CompileRule<Order>(newRule);
             bool passes = fakeName(order);
             Assert.IsTrue(passes);
@@ -59,10 +59,10 @@ namespace MicroRuleEngine.Tests
 
             using (var stream1 = new MemoryStream())
             {
-                Rule rule = Rule.Create("Customer.LastName", mreOperator.Equal, "Doe")
-                            & (Rule.Create("Customer.FirstName", mreOperator.Equal, "John") |
-                               Rule.Create("Customer.FirstName", mreOperator.Equal, "Jane"))
-                               & Rule.Create("Items[1].Cost", mreOperator.Equal, 5.25m);
+                Rule rule = Rule.Create("Customer.LastName", MreOperator.Equal, "Doe")
+                            & (Rule.Create("Customer.FirstName", MreOperator.Equal, "John") |
+                               Rule.Create("Customer.FirstName", MreOperator.Equal, "Jane"))
+                               & Rule.Create("Items[1].Cost", MreOperator.Equal, 5.25m);
 
                 serializer.WriteObject(stream1, rule);
 
@@ -80,7 +80,7 @@ namespace MicroRuleEngine.Tests
 
             var order = ExampleUsage.GetOrder();
 
-            MRE engine = new MRE();
+            Mre engine = new Mre();
             var fakeName = engine.CompileRule<Order>(newRule);
             bool passes = fakeName(order);
             Assert.IsTrue(passes);
@@ -94,7 +94,7 @@ namespace MicroRuleEngine.Tests
         public void JsonVisualizationTest()
         {
             var order = ExampleUsage.GetOrder();
-            var members = MRE.Member.GetFields(order.GetType());
+            var members = Mre.Member.GetFields(order.GetType());
             var serializer = new DataContractJsonSerializer(members.GetType());
 
             string text;

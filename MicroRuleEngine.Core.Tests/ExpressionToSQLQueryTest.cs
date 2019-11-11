@@ -11,9 +11,9 @@ using System.Threading.Tasks;
 namespace MicroRuleEngine.Core.Tests
 {
     [TestClass]
-    public class ExpressionToSQLQueryTest
+    public class ExpressionToSqlQueryTest
     {
-        internal DbContextOptions<BloggingContext> GetDBOptions()
+        internal DbContextOptions<BloggingContext> GetDbOptions()
         {
             var connection = new SqliteConnection("DataSource=:memory:");
             connection.Open();
@@ -32,22 +32,22 @@ namespace MicroRuleEngine.Core.Tests
         public void BasicEqualityExpression()
         {
            
-            using (var context = new BloggingContext(GetDBOptions()))
+            using (var context = new BloggingContext(GetDbOptions()))
             {
                 context.Blogs.Add(new Blog { Url = "http://test.com" });
                 context.SaveChanges();
 
                 var testBlog = context.Blogs.FirstOrDefault(b => b.Url == "http://test.com");
 
-                var fields = MRE.Member.GetFields(typeof(Blog));
+                var fields = Mre.Member.GetFields(typeof(Blog));
                 Rule rule = new Rule
                 {
                     MemberName = "Url",
-                    Operator = mreOperator.Equal.ToString("g"),
+                    Operator = MreOperator.Equal.ToString("g"),
                     TargetValue = "http://test.com"
                 };
 
-                var blog2 = context.Blogs.Where(MRE.ToExpression<Blog>(rule, false)).FirstOrDefault();
+                var blog2 = context.Blogs.Where(Mre.ToExpression<Blog>(rule, false)).FirstOrDefault();
 
                 Assert.IsTrue(testBlog.BlogId == blog2.BlogId);
 

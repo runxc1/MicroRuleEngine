@@ -24,7 +24,7 @@ namespace MicroRuleEngine.Tests
                 Operator = ExpressionType.Equal.ToString("g"),
                 TargetValue = "AUS"
             };
-            MRE engine = new MRE();
+            Mre engine = new Mre();
             var compiledRule = engine.CompileRule<Order>(rule);
             bool passes = compiledRule(order);
             Assert.IsFalse(passes);
@@ -40,7 +40,7 @@ namespace MicroRuleEngine.Tests
                 Operator = ExpressionType.Equal.ToString("g"),
                 TargetValue = "AUS"
             };
-            MRE engine = new MRE();
+            Mre engine = new Mre();
             var compiledRule = engine.CompileRule<Order>(rule);
             bool passes = compiledRule(order);
             Assert.IsTrue(passes);
@@ -72,7 +72,7 @@ namespace MicroRuleEngine.Tests
                     }
                 }
             };
-            MRE engine = new MRE();
+            Mre engine = new Mre();
             var fakeName = engine.CompileRule<Order>(rule);
             bool passes = fakeName(order);
             Assert.IsTrue(passes);
@@ -91,7 +91,7 @@ namespace MicroRuleEngine.Tests
                 Operator = "HasItem",//The Order Object Contains a method named 'HasItem' that returns true/false
                 Inputs = new List<object> { "Test" }
             };
-            MRE engine = new MRE();
+            Mre engine = new Mre();
 
             var boolMethod = engine.CompileRule<Order>(rule);
             bool passes = boolMethod(order);
@@ -112,7 +112,7 @@ namespace MicroRuleEngine.Tests
                 Operator = "HasItem",//The Order Object Contains a method named 'HasItem' that returns true/false
                 Inputs = new List<object> { "Test" }
             };
-            MRE engine = new MRE();
+            Mre engine = new Mre();
 
             var boolMethod = engine.CompileRule(typeof(Order), rule);
             bool passes =(bool)  boolMethod.DynamicInvoke(order);
@@ -143,7 +143,7 @@ namespace MicroRuleEngine.Tests
                      }
                  }
             };
-            MRE engine = new MRE();
+            Mre engine = new Mre();
             var boolMethod = engine.CompileRule<Order>(rule);
             bool passes = boolMethod(order);
             Assert.IsTrue(passes);
@@ -166,7 +166,7 @@ namespace MicroRuleEngine.Tests
                 Operator = "EndsWith",//Regular method that exists on string.. As a note expression methods are not available
                 Inputs = new List<object> { "ohn" }
             };
-            MRE engine = new MRE();
+            Mre engine = new Mre();
             var childPropCheck = engine.CompileRule<Order>(rule);
             bool passes = childPropCheck(order);
             Assert.IsTrue(passes);
@@ -187,7 +187,7 @@ namespace MicroRuleEngine.Tests
                  Operator = "EndsWith", //Regular method that exists on string.. As a note expression methods are not available
                  Inputs = new List<object> { "ohn" }
              };
-            MRE engine = new MRE();
+            Mre engine = new Mre();
             var childPropCheck = engine.CompileRule<Order>(rule);
              bool passes = childPropCheck(order);
              Assert.IsFalse(passes);
@@ -202,7 +202,7 @@ namespace MicroRuleEngine.Tests
                 Operator = "IsMatch",
                 TargetValue = @"^[a-zA-Z0-9]*$"
             };
-            MRE engine = new MRE();
+            Mre engine = new Mre();
             var regexCheck = engine.CompileRule<Order>(rule);
             bool passes = regexCheck(order);
             Assert.IsTrue(passes);

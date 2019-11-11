@@ -11,9 +11,9 @@ namespace MicroRuleEngine.Tests
         public void BadPropertyName()
         {
             Order order = ExampleUsage.GetOrder();
-            Rule rule = Rule.Create("NotAProperty", mreOperator.Equal, 1);
+            Rule rule = Rule.Create("NotAProperty", MreOperator.Equal, 1);
 
-            MRE engine = new MRE();
+            Mre engine = new Mre();
             var compiledRule = engine.CompileRule<Order>(rule);
             bool passes = compiledRule(order);
             Assert.IsTrue(false);       // should not get here.
@@ -26,9 +26,9 @@ namespace MicroRuleEngine.Tests
             Order order = ExampleUsage.GetOrder();
             Rule rule = Rule.MethodOnChild("Customer.FirstName", "NotAMethod", "ohn");
 
-            MRE engine = new MRE();
-            var c1_123 = engine.CompileRule<Order>(rule);
-            bool passes = c1_123(order);
+            Mre engine = new Mre();
+            var c1123 = engine.CompileRule<Order>(rule);
+            bool passes = c1123(order);
             Assert.IsTrue(false);       // should not get here.
         }
 
@@ -37,11 +37,11 @@ namespace MicroRuleEngine.Tests
         public void NotADataRow()
         {
             Order order = ExampleUsage.GetOrder();
-            Rule rule = DataRule.Create<int>("Customer", mreOperator.Equal, "123");
+            Rule rule = DataRule.Create<int>("Customer", MreOperator.Equal, "123");
 
-            MRE engine = new MRE();
-            var c1_123 = engine.CompileRule<Order>(rule);
-            bool passes = c1_123(order);
+            Mre engine = new Mre();
+            var c1123 = engine.CompileRule<Order>(rule);
+            bool passes = c1123(order);
             Assert.IsTrue(false);       // should not get here.
         }
 
@@ -50,11 +50,11 @@ namespace MicroRuleEngine.Tests
         public void NotACollection()
         {
             Order order = ExampleUsage.GetOrder();
-            Rule rule = Rule.Create("Customer[1]", mreOperator.Equal, "123");
+            Rule rule = Rule.Create("Customer[1]", MreOperator.Equal, "123");
 
-            MRE engine = new MRE();
-            var c1_123 = engine.CompileRule<Order>(rule);
-            bool passes = c1_123(order);
+            Mre engine = new Mre();
+            var c1123 = engine.CompileRule<Order>(rule);
+            bool passes = c1123(order);
             Assert.IsTrue(false);       // should not get here.
         }
     }

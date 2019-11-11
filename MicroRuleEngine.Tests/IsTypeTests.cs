@@ -11,7 +11,7 @@ namespace MicroRuleEngine.Tests
             var target = new IsTypeClass  { NumAsString = "1234", OtherField = "Hello, World" };
 
             Rule rule = Rule.IsInteger("NumAsString");
-            MRE engine = new MRE();
+            Mre engine = new Mre();
             var compiledRule = engine.CompileRule<IsTypeClass>(rule);
             bool passes = compiledRule(target);
             Assert.IsTrue(passes);
@@ -23,7 +23,7 @@ namespace MicroRuleEngine.Tests
             var target = new IsTypeClass { NumAsString = "1234.567", OtherField = "Hello, World" };
 
             Rule rule = Rule.IsInteger("NumAsString");
-            MRE engine = new MRE();
+            Mre engine = new Mre();
             var compiledRule = engine.CompileRule<IsTypeClass>(rule);
             bool passes = compiledRule(target);
             Assert.IsFalse(passes);
@@ -35,7 +35,7 @@ namespace MicroRuleEngine.Tests
             var target = new IsTypeClass { NumAsString = "1234.567", OtherField = "Hello, World" };
 
             Rule rule = Rule.IsInteger("OtherField");
-            MRE engine = new MRE();
+            Mre engine = new Mre();
             var compiledRule = engine.CompileRule<IsTypeClass>(rule);
             bool passes = compiledRule(target);
             Assert.IsFalse(passes);
@@ -46,7 +46,7 @@ namespace MicroRuleEngine.Tests
             var target = new IsTypeClass { NumAsString = "1234", OtherField = "Hello, World" };
 
             Rule rule = Rule.IsFloat("NumAsString");
-            MRE engine = new MRE();
+            Mre engine = new Mre();
             var compiledRule = engine.CompileRule<IsTypeClass>(rule);
             bool passes = compiledRule(target);
             Assert.IsTrue(passes);
@@ -58,7 +58,7 @@ namespace MicroRuleEngine.Tests
             var target = new IsTypeClass { NumAsString = "1234.567", OtherField = "Hello, World" };
 
             Rule rule = Rule.IsFloat("NumAsString");
-            MRE engine = new MRE();
+            Mre engine = new Mre();
             var compiledRule = engine.CompileRule<IsTypeClass>(rule);
             bool passes = compiledRule(target);
             Assert.IsTrue(passes);
@@ -70,7 +70,7 @@ namespace MicroRuleEngine.Tests
             var target = new IsTypeClass { NumAsString = "1234.567", OtherField = "Hello, World" };
 
             Rule rule = Rule.IsFloat("OtherField");
-            MRE engine = new MRE();
+            Mre engine = new Mre();
             var compiledRule = engine.CompileRule<IsTypeClass>(rule);
             bool passes = compiledRule(target);
             Assert.IsFalse(passes);
@@ -82,7 +82,7 @@ namespace MicroRuleEngine.Tests
             var target = new IsTypeClass { NumAsString = "1234", OtherField = "Hello, World" };
 
             Rule rule = Rule.IsDouble("NumAsString");
-            MRE engine = new MRE();
+            Mre engine = new Mre();
             var compiledRule = engine.CompileRule<IsTypeClass>(rule);
             bool passes = compiledRule(target);
             Assert.IsTrue(passes);
@@ -94,7 +94,7 @@ namespace MicroRuleEngine.Tests
             var target = new IsTypeClass { NumAsString = "1234.56789012345", OtherField = "Hello, World" };
 
             Rule rule = Rule.IsDouble("NumAsString");
-            MRE engine = new MRE();
+            Mre engine = new Mre();
             var compiledRule = engine.CompileRule<IsTypeClass>(rule);
             bool passes = compiledRule(target);
             Assert.IsTrue(passes);
@@ -106,7 +106,7 @@ namespace MicroRuleEngine.Tests
             var target = new IsTypeClass { NumAsString = "1234.567", OtherField = "Hello, World" };
 
             Rule rule = Rule.IsDouble("OtherField");
-            MRE engine = new MRE();
+            Mre engine = new Mre();
             var compiledRule = engine.CompileRule<IsTypeClass>(rule);
             bool passes = compiledRule(target);
             Assert.IsFalse(passes);
@@ -118,7 +118,7 @@ namespace MicroRuleEngine.Tests
             var target = new IsTypeClass { NumAsString = "1234", OtherField = "Hello, World" };
 
             Rule rule = Rule.IsDecimal("NumAsString");
-            MRE engine = new MRE();
+            Mre engine = new Mre();
             var compiledRule = engine.CompileRule<IsTypeClass>(rule);
             bool passes = compiledRule(target);
             Assert.IsTrue(passes);
@@ -130,7 +130,7 @@ namespace MicroRuleEngine.Tests
             var target = new IsTypeClass { NumAsString = "1234.56789012345", OtherField = "Hello, World" };
 
             Rule rule = Rule.IsDecimal("NumAsString");
-            MRE engine = new MRE();
+            Mre engine = new Mre();
             var compiledRule = engine.CompileRule<IsTypeClass>(rule);
             bool passes = compiledRule(target);
             Assert.IsTrue(passes);
@@ -142,7 +142,7 @@ namespace MicroRuleEngine.Tests
             var target = new IsTypeClass { NumAsString = "1234.567", OtherField = "Hello, World" };
 
             Rule rule = Rule.IsDecimal("OtherField");
-            MRE engine = new MRE();
+            Mre engine = new Mre();
             var compiledRule = engine.CompileRule<IsTypeClass>(rule);
             bool passes = compiledRule(target);
             Assert.IsFalse(passes);

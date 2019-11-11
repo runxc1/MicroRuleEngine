@@ -15,6 +15,7 @@ content
 *.vsmdi
 *.testsettings
 /.vs
+/_[Rr]e[Ss]harper*.*
 /ConsoleApp1
 /packages
 /MicroRuleEngine.Tests.psess
