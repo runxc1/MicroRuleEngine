@@ -133,7 +133,8 @@ namespace MicroRuleEngine
             return expressions.Aggregate(methodExp);
         }
 
-        static readonly Regex _regexIndexed = new Regex(@"(\w+)\[(\d+)\]", RegexOptions.Compiled);
+        private static readonly Regex _regexIndexed =
+	        new Regex(@"(?'Collection'\w+)\[(?:(?'Index'\d+)|(?:['""](?'Key'\w+)[""']))\]", RegexOptions.Compiled);
 
         private static Expression GetProperty(Expression param, string propname)
         {
@@ -146,26 +147,38 @@ namespace MicroRuleEngine
                 var isIndexed = _regexIndexed.Match(childprop);
                 if (isIndexed.Success)
                 {
-                    var collectionname = isIndexed.Groups[1].Value;
-                    var index = Int32.Parse(isIndexed.Groups[2].Value);
+	                var indexType = typeof(int);
+                    var collectionname = isIndexed.Groups["Collection"].Value;
                     var collectionProp = propertyType.GetProperty(collectionname);
                     if (collectionProp == null)
-                        throw new RulesException(
-                                $"Cannot find collection property {collectionname} in class {propertyType.Name} (\"{propname}\")");
+	                    throw new RulesException(
+		                    $"Cannot find collection property {collectionname} in class {propertyType.Name} (\"{propname}\")");
                     var collexpr = Expression.PropertyOrField(propExpression, collectionname);
+
+                    Expression expIndex;
+                    if (isIndexed.Groups["Index"].Success)
+                    {
+	                    var index = Int32.Parse(isIndexed.Groups["Index"].Value);
+	                    expIndex = Expression.Constant(index);
+                    }
+                    else
+                    {
+	                    expIndex = Expression.Constant(isIndexed.Groups["Key"].Value);
+	                    indexType = typeof(string);
+                    }
 
                     var collectionType = collexpr.Type;
                     if (collectionType.IsArray)
                     {
-                        propExpression = Expression.ArrayAccess(collexpr, Expression.Constant(index));
+                        propExpression = Expression.ArrayAccess(collexpr, expIndex);
                         propertyType = propExpression.Type;
                     }
                     else
                     {
-                        var getter = collectionType.GetMethod("get_Item", new Type[] { typeof(Int32) });
+                        var getter = collectionType.GetMethod("get_Item", new Type[] { indexType });
                         if (getter == null)
                             throw new RulesException($"'{collectionname} ({collectionType.Name}) cannot be indexed");
-                        propExpression = Expression.Call(collexpr, getter, Expression.Constant(index));
+                        propExpression = Expression.Call(collexpr, getter, expIndex);
                         propertyType = getter.ReturnType;
                     }
                 }
@@ -412,23 +425,56 @@ namespace MicroRuleEngine
                     safevalue = null;
                 else if (propType.IsEnum)
                     safevalue = Enum.Parse(propType, txt);
-                else if (propType.Name == "Nullable`1")
-                {
-                    valuetype = Nullable.GetUnderlyingType(propType);
-                    safevalue = Convert.ChangeType(value, valuetype);
-                }
                 else
-                    safevalue = Convert.ChangeType(value, valuetype);
-            }
-            else if (propType.Name == "Nullable`1")
-            {
-                valuetype = Nullable.GetUnderlyingType(propType);
-                safevalue = Convert.ChangeType(value, valuetype);
+                {
+                    if (propType.Name == "Nullable`1")
+                        valuetype = Nullable.GetUnderlyingType(propType);
+
+                    safevalue = IsTime(txt, propType) ?? Convert.ChangeType(value, valuetype);
+                }
             }
             else
+            {
+                if (propType.Name == "Nullable`1")
+                    valuetype = Nullable.GetUnderlyingType(propType);
                 safevalue = Convert.ChangeType(value, valuetype);
+            }
 
             return Expression.Constant(safevalue, propType);
+        }
+
+        private static  readonly Regex reNow = new Regex(@"#NOW([-+])(\d+)([SMHDY])", RegexOptions.IgnoreCase
+                                                                              | RegexOptions.Compiled
+                                                                              | RegexOptions.Singleline);
+
+        private static DateTime? IsTime(string text, Type targetType)
+        {
+            if (targetType != typeof(DateTime) && targetType != typeof(DateTime?))
+                return null;
+
+            var match = reNow.Match(text);
+            if (!match.Success)
+                return null;
+
+            var amt = Int32.Parse(match.Groups[2].Value);
+            if (match.Groups[1].Value == "-")
+                amt = -amt;
+
+            switch (Char.ToUpperInvariant(match.Groups[3].Value[0]))
+            {
+                case 'S':
+                    return DateTime.Now.AddSeconds(amt);
+                case 'M':
+                    return DateTime.Now.AddMinutes(amt);
+                case 'H':
+                    return DateTime.Now.AddHours(amt);
+                case 'D':
+                    return DateTime.Now.AddDays(amt);
+                case 'Y':
+                    return DateTime.Now.AddYears(amt);
+            }
+            // it should not be possible to reach here.	
+            throw new ArgumentException();
         }
 
         private static Type ElementType(Type seqType)
@@ -508,12 +554,14 @@ namespace MicroRuleEngine
                     ;
             }
             public static BindingFlags flags = BindingFlags.Instance | BindingFlags.Public;
-            public static List<Member> GetFields(System.Type type, string memberName = null, string parentPath = null)
+            public static List<Member> GetFields(Type type, string memberName = null, string parentPath = null)
             {
                 List<Member> toReturn = new List<Member>();
-                var fi = new Member();
-                fi.Name = string.IsNullOrEmpty(parentPath) ? memberName : $"{parentPath}.{memberName}";
-                fi.Type = type.ToString();
+                var fi = new Member
+                {
+                    Name = string.IsNullOrEmpty(parentPath) ? memberName : $"{parentPath}.{memberName}",
+                    Type = type.ToString()
+                };
                 fi.PossibleOperators = Member.Operators(type, string.IsNullOrEmpty(fi.Name));
                 toReturn.Add(fi);
                 if (!Member.IsSimpleType(type))
@@ -589,7 +637,7 @@ namespace MicroRuleEngine
                     mreOperator.IsDouble.ToString("g"),
                     mreOperator.IsDecimal.ToString("g")
                 };
-            public static List<Operator> Operators(System.Type type, bool addLogicOperators = false, bool noOverloads = true)
+            public static List<Operator> Operators(Type type, bool addLogicOperators = false, bool noOverloads = true)
             {
                 List<Operator> operators = new List<Operator>();
                 if (addLogicOperators)
@@ -788,10 +836,10 @@ namespace MicroRuleEngine
 
     internal static class Placeholder
     {
-        public static int Int;
-        public static float Float;
-        public static double Double;
-        public static decimal Decimal;
+        public static int Int = 0;
+        public static float Float=0.0f;
+        public static double Double=0.0;
+        public static decimal Decimal=0.0m;
     }
 
     // Nothing specific to MRE.  Can be moved to a more common location
@@ -880,7 +928,7 @@ namespace MicroRuleEngine
         /// <summary>
         /// Checks that a string value matches a Regex expression
         /// </summary>
-		IsMatch = 100,
+        IsMatch = 100,
         /// <summary>
         /// Checks that a value can be 'TryParsed' to an Int32
         /// </summary>

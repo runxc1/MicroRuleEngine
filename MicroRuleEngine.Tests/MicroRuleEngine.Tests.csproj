@@ -55,6 +55,7 @@
     </CodeAnalysisDependentAssemblyPaths>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ExceptionTests.cs" />
     <Compile Include="IsTypeTests.cs" />
     <Compile Include="NewAPI.cs" />
     <Compile Include="Models\Order.cs" />
@@ -62,7 +63,7 @@
     <Compile Include="ExampleUsage.cs" />
     <Compile Include="DataRowTest.cs" />
     <Compile Include="SerializationTests.cs" />
-    <Compile Include="ExceptionTests.cs" />
+    <Compile Include="TimeTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\MicroRuleEngine\MicroRuleEngine.csproj">
