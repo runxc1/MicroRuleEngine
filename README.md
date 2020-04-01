@@ -92,8 +92,30 @@ There are a lot of examples in the test cases but, here is another snippet demon
 
 If you need to run your comparison against an ADO.NET DataSet you can also do that as well:
 ```csharp
-	Rule rule = Rule.Create("Items[1].Cost", mreOperator.Equal, "*.Items[0].Cost");
+	var dr = GetDataRow();
+	// (int) dr["Column2"] == 123 &&  (string) dr["Column1"] == "Test"
+	Rule rule = DataRule.Create<int>("Column2", mreOperator.Equal, "123") & DataRule.Create<string>("Column1", mreOperator.Equal, "Test");
 ```
+  
+  
+
+####  #NOW and time-based rules.
+You can test a property for a time range from the current time, using the special case `#NOW` keyword.   The member must be a `DataTime` or `DateTime?`,
+and the target value must be a string in the form :`#NOW+90D`   (The sign can be plus or minus, but must be given.  The Suffix can be
+'S' for Seconds, `M` for Minutes, `H` for Hours, `D` for Days, or `Y` for Years.   The number must be an integer.)
+
+examples:
+
+`		Rule rule = Rule.Create("OrderDate", mreOperator.GreaterThanOrEqual, "#NOW-90M");`
+
+`OrderDate` must be within the last 90 minutes.
+
+`		Rule rule = Rule.Create("ExpirationDate", mreOperator.LessThanOrEqual, "#NOW+1Y");`
+
+`ExpirationDate` must be within the next year.
+
+
+
 
 How Can I Store Rules?
 ---------------------
