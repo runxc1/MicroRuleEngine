@@ -52,6 +52,12 @@ You can reference member properties which are `Arrays` or `List<>` by their inde
 	Rule rule = Rule.Create("Items[1].Cost", mreOperator.GreaterThanOrEqual, "5.25");
 ```
 
+Similarly, you can reference element of a string- or integer-keyed dictionary:
+```csharp
+	Rule rule = Rule.Create("Items['myKey'].Cost", mreOperator.GreaterThanOrEqual, "5.25");
+```
+
+
 You can also compare an object to itself indicated by the `*.` at the beginning of the `TargetValue`:
 ```csharp
 	Rule rule = Rule.Create("Items[1].Cost", mreOperator.Equal, "*.Items[0].Cost");

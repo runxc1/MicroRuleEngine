@@ -133,7 +133,8 @@ namespace MicroRuleEngine
             return expressions.Aggregate(methodExp);
         }
 
-        static readonly Regex _regexIndexed = new Regex(@"(\w+)\[(\d+)\]", RegexOptions.Compiled);
+        private static readonly Regex _regexIndexed =
+	        new Regex(@"(?'Collection'\w+)\[(?:(?'Index'\d+)|(?:['""](?'Key'\w+)[""']))\]", RegexOptions.Compiled);
 
         private static Expression GetProperty(Expression param, string propname)
         {
@@ -146,26 +147,38 @@ namespace MicroRuleEngine
                 var isIndexed = _regexIndexed.Match(childprop);
                 if (isIndexed.Success)
                 {
-                    var collectionname = isIndexed.Groups[1].Value;
-                    var index = Int32.Parse(isIndexed.Groups[2].Value);
+	                var indexType = typeof(int);
+                    var collectionname = isIndexed.Groups["Collection"].Value;
                     var collectionProp = propertyType.GetProperty(collectionname);
                     if (collectionProp == null)
-                        throw new RulesException(
-                                $"Cannot find collection property {collectionname} in class {propertyType.Name} (\"{propname}\")");
+	                    throw new RulesException(
+		                    $"Cannot find collection property {collectionname} in class {propertyType.Name} (\"{propname}\")");
                     var collexpr = Expression.PropertyOrField(propExpression, collectionname);
+
+                    Expression expIndex;
+                    if (isIndexed.Groups["Index"].Success)
+                    {
+	                    var index = Int32.Parse(isIndexed.Groups["Index"].Value);
+	                    expIndex = Expression.Constant(index);
+                    }
+                    else
+                    {
+	                    expIndex = Expression.Constant(isIndexed.Groups["Key"].Value);
+	                    indexType = typeof(string);
+                    }
 
                     var collectionType = collexpr.Type;
                     if (collectionType.IsArray)
                     {
-                        propExpression = Expression.ArrayAccess(collexpr, Expression.Constant(index));
+                        propExpression = Expression.ArrayAccess(collexpr, expIndex);
                         propertyType = propExpression.Type;
                     }
                     else
                     {
-                        var getter = collectionType.GetMethod("get_Item", new Type[] { typeof(Int32) });
+                        var getter = collectionType.GetMethod("get_Item", new Type[] { indexType });
                         if (getter == null)
                             throw new RulesException($"'{collectionname} ({collectionType.Name}) cannot be indexed");
-                        propExpression = Expression.Call(collexpr, getter, Expression.Constant(index));
+                        propExpression = Expression.Call(collexpr, getter, expIndex);
                         propertyType = getter.ReturnType;
                     }
                 }
@@ -541,7 +554,7 @@ namespace MicroRuleEngine
                     ;
             }
             public static BindingFlags flags = BindingFlags.Instance | BindingFlags.Public;
-            public static List<Member> GetFields(System.Type type, string memberName = null, string parentPath = null)
+            public static List<Member> GetFields(Type type, string memberName = null, string parentPath = null)
             {
                 List<Member> toReturn = new List<Member>();
                 var fi = new Member
@@ -624,7 +637,7 @@ namespace MicroRuleEngine
                     mreOperator.IsDouble.ToString("g"),
                     mreOperator.IsDecimal.ToString("g")
                 };
-            public static List<Operator> Operators(System.Type type, bool addLogicOperators = false, bool noOverloads = true)
+            public static List<Operator> Operators(Type type, bool addLogicOperators = false, bool noOverloads = true)
             {
                 List<Operator> operators = new List<Operator>();
                 if (addLogicOperators)

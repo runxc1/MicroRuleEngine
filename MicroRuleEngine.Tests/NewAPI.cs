@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using MicroRuleEngine.Tests.Models;
@@ -175,6 +176,47 @@ namespace MicroRuleEngine.Tests
             order.Items[1].Cost = 6.99m;
             passes = compiledRule(order);
             Assert.IsFalse(passes);
+        }
+
+        class DictTest<T>
+        {
+	        public Dictionary<T, int> Dict { get; set; }
+        }
+
+        [TestMethod]
+        public void Dictionary_StringIndex()
+        {
+	        var objDict = new DictTest<string> { Dict = new Dictionary<string, int>()};
+            objDict.Dict.Add("Key", 1234);
+
+	        Rule rule = Rule.Create("Dict['Key']", mreOperator.Equal, 1234);
+
+	        MRE engine = new MRE();
+	        var compiledRule = engine.CompileRule<DictTest<string>>(rule);
+	        bool passes = compiledRule(objDict);
+	        Assert.IsTrue(passes);
+
+	        objDict.Dict["Key"] = 2345;
+            passes = compiledRule(objDict);
+	        Assert.IsFalse(passes);
+        }
+
+        [TestMethod]
+        public void Dictionary_IntIndex()
+        {
+	        var objDict = new DictTest<int> { Dict = new Dictionary<int, int>() };
+	        objDict.Dict.Add(111, 1234);
+
+	        Rule rule = Rule.Create("Dict[111]", mreOperator.Equal, 1234);
+
+	        MRE engine = new MRE();
+	        var compiledRule = engine.CompileRule<DictTest<int>>(rule);
+	        bool passes = compiledRule(objDict);
+	        Assert.IsTrue(passes);
+
+	        objDict.Dict[111] = 2345;
+	        passes = compiledRule(objDict);
+	        Assert.IsFalse(passes);
         }
 
         [TestMethod]
