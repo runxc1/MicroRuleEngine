@@ -31,7 +31,7 @@ namespace MicroRuleEngine.Tests
 			MRE engine = new MRE();
 			var boolMethod = engine.CompileRule<Order>(rule);
 			bool passes = boolMethod(order);
-			Assert.IsFalse(passes);;
+			Assert.IsFalse(passes);
 
 		}
 
@@ -46,8 +46,7 @@ namespace MicroRuleEngine.Tests
 			MRE engine = new MRE();
 			var boolMethod = engine.CompileRule<Order>(rule);
 			bool passes = boolMethod(order);
-			Assert.IsFalse(passes); ;
-
+			Assert.IsFalse(passes);
 		}
 
 		[TestMethod]
@@ -61,7 +60,34 @@ namespace MicroRuleEngine.Tests
 			MRE engine = new MRE();
 			var boolMethod = engine.CompileRule<Order>(rule);
 			bool passes = boolMethod(order);
-			Assert.IsFalse(passes); ;
+			Assert.IsFalse(passes);
+
+		}
+
+		[TestMethod]
+		public void Time_InRange_Days()
+		{
+			Order order = ExampleUsage.GetOrder();
+			Rule rule = Rule.Create("OrderDate", mreOperator.GreaterThanOrEqual, "#NOW-90D");
+			order.OrderDate = DateTime.Now.AddDays(-60);
+
+			MRE engine = new MRE();
+			var boolMethod = engine.CompileRule<Order>(rule);
+			bool passes = boolMethod(order);
+			Assert.IsTrue(passes);
+		}
+
+		[TestMethod]
+		public void Time_OutOfRange_Days()
+		{
+			Order order = ExampleUsage.GetOrder();
+			Rule rule = Rule.Create("OrderDate", mreOperator.GreaterThanOrEqual, "#NOW-90D");
+			order.OrderDate = DateTime.Now.AddDays(-100);
+
+			MRE engine = new MRE();
+			var boolMethod = engine.CompileRule<Order>(rule);
+			bool passes = boolMethod(order);
+			Assert.IsFalse(passes);
 
 		}
 

@@ -412,58 +412,57 @@ namespace MicroRuleEngine
                     safevalue = null;
                 else if (propType.IsEnum)
                     safevalue = Enum.Parse(propType, txt);
-                else if (propType.Name == "Nullable`1")
-                {
-                    valuetype = Nullable.GetUnderlyingType(propType);
-                    safevalue = Convert.ChangeType(value, valuetype);
-                }
                 else
-                    safevalue = Convert.ChangeType(value, valuetype);
-            }
-            else if (propType.Name == "Nullable`1")
-            {
-                valuetype = Nullable.GetUnderlyingType(propType);
-                safevalue = Convert.ChangeType(value, valuetype);
+                {
+                    if (propType.Name == "Nullable`1")
+                        valuetype = Nullable.GetUnderlyingType(propType);
+
+                    safevalue = IsTime(txt, propType) ?? Convert.ChangeType(value, valuetype);
+                }
             }
             else
+            {
+                if (propType.Name == "Nullable`1")
+                    valuetype = Nullable.GetUnderlyingType(propType);
                 safevalue = Convert.ChangeType(value, valuetype);
+            }
 
-			return Expression.Constant(safevalue, propType);
-		}
+            return Expression.Constant(safevalue, propType);
+        }
 
-		private static  readonly Regex reNow = new Regex(@"#NOW([-+])(\d+)([SMHDY])", RegexOptions.IgnoreCase
-																			  | RegexOptions.Compiled
-																			  | RegexOptions.Singleline);
+        private static  readonly Regex reNow = new Regex(@"#NOW([-+])(\d+)([SMHDY])", RegexOptions.IgnoreCase
+                                                                              | RegexOptions.Compiled
+                                                                              | RegexOptions.Singleline);
 
-		private static DateTime? IsTime(string text, Type targetType)
-		{
-			if (targetType != typeof(DateTime) && targetType != typeof(DateTime?))
-				return null;
+        private static DateTime? IsTime(string text, Type targetType)
+        {
+            if (targetType != typeof(DateTime) && targetType != typeof(DateTime?))
+                return null;
 
-			var match = reNow.Match(text);
-			if (!match.Success)
-				return null;
+            var match = reNow.Match(text);
+            if (!match.Success)
+                return null;
 
-			var amt = Int32.Parse(match.Groups[2].Value);
-			if (match.Groups[1].Value == "-")
-				amt = -amt;
+            var amt = Int32.Parse(match.Groups[2].Value);
+            if (match.Groups[1].Value == "-")
+                amt = -amt;
 
-			switch (Char.ToUpperInvariant(match.Groups[3].Value[0]))
-			{
-				case 'S':
-					return DateTime.Now.AddSeconds(amt);
-				case 'M':
-					return DateTime.Now.AddMinutes(amt);
-				case 'H':
-					return DateTime.Now.AddHours(amt);
-				case 'D':
-					return DateTime.Now.AddDays(amt);
-				case 'Y':
-					return DateTime.Now.AddYears(amt);
-			}
-			// it should not be possible toreach here.	
-			throw new ArgumentException();
-		}
+            switch (Char.ToUpperInvariant(match.Groups[3].Value[0]))
+            {
+                case 'S':
+                    return DateTime.Now.AddSeconds(amt);
+                case 'M':
+                    return DateTime.Now.AddMinutes(amt);
+                case 'H':
+                    return DateTime.Now.AddHours(amt);
+                case 'D':
+                    return DateTime.Now.AddDays(amt);
+                case 'Y':
+                    return DateTime.Now.AddYears(amt);
+            }
+            // it should not be possible to reach here.	
+            throw new ArgumentException();
+        }
 
         private static Type ElementType(Type seqType)
         {
@@ -545,9 +544,11 @@ namespace MicroRuleEngine
             public static List<Member> GetFields(System.Type type, string memberName = null, string parentPath = null)
             {
                 List<Member> toReturn = new List<Member>();
-                var fi = new Member();
-                fi.Name = string.IsNullOrEmpty(parentPath) ? memberName : $"{parentPath}.{memberName}";
-                fi.Type = type.ToString();
+                var fi = new Member
+                {
+                    Name = string.IsNullOrEmpty(parentPath) ? memberName : $"{parentPath}.{memberName}",
+                    Type = type.ToString()
+                };
                 fi.PossibleOperators = Member.Operators(type, string.IsNullOrEmpty(fi.Name));
                 toReturn.Add(fi);
                 if (!Member.IsSimpleType(type))
@@ -820,13 +821,13 @@ namespace MicroRuleEngine
         }
     }
 
-	internal static class Placeholder
-	{
-		public static int Int = 0;
-		public static float Float=0.0f;
-		public static double Double=0.0;
-		public static decimal Decimal=0.0m;
-	}
+    internal static class Placeholder
+    {
+        public static int Int = 0;
+        public static float Float=0.0f;
+        public static double Double=0.0;
+        public static decimal Decimal=0.0m;
+    }
 
     // Nothing specific to MRE.  Can be moved to a more common location
     public static class Extensions
@@ -914,7 +915,7 @@ namespace MicroRuleEngine
         /// <summary>
         /// Checks that a string value matches a Regex expression
         /// </summary>
-		IsMatch = 100,
+        IsMatch = 100,
         /// <summary>
         /// Checks that a value can be 'TryParsed' to an Int32
         /// </summary>
