@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFrameworks>net40;net452;net461;netstandard2.0; netstandard2.1;netcoreapp2.1;netcoreapp3.1</TargetFrameworks>
     <RestoreProjectStyle>PackageReference</RestoreProjectStyle>
 
   </PropertyGroup>

@@ -212,6 +212,106 @@ namespace MicroRuleEngine.Tests
             Assert.IsFalse(passes);
         }
 
+        [TestMethod]
+        public void BareString()
+        {
+            var rule = new Rule()
+            {
+                Operator = "StartsWith",
+                Inputs = new[] { "FDX" }
+            };
+
+            var engine = new MRE();
+            var childPropCheck = engine.CompileRule<string>(rule);
+            var passes = childPropCheck("FDX 123456");
+            Assert.IsTrue(passes);
+
+
+            passes = childPropCheck("BOB 123456");
+            Assert.IsFalse(passes);
+        }
+
+        [TestMethod]
+        public void IsInInput_SingleValue()
+        {
+            var value = "hello";
+
+            var rule = new Rule()
+            {
+                Operator = "IsInInput",
+                Inputs = new List<string> { "hello" }
+            };
+
+            var mre = new MRE();
+
+            var ruleFunc = mre.CompileRule<string>(rule);
+
+            Assert.IsTrue(ruleFunc(value));
+        }
+
+        [TestMethod]
+        public void IsInInput_MultiValue()
+        {
+            var value = "hello";
+
+            var rule = new Rule()
+            {
+                Operator = "IsInInput",
+                Inputs = new List<string> { "hello", "World" }
+            };
+
+            var mre = new MRE();
+
+            var ruleFunc = mre.CompileRule<string>(rule);
+
+            Assert.IsTrue(ruleFunc(value));
+        }
+
+        [TestMethod]
+        public void IsInInput_NoExactMatch()
+        {
+            var value = "world";
+
+            var rule = new Rule()
+            {
+                Operator = "IsInInput",
+                Inputs = new List<string> { "hello", "World" }
+            };
+
+            var mre = new MRE();
+
+            var ruleFunc = mre.CompileRule<string>(rule);
+
+            Assert.IsFalse(ruleFunc(value));
+        }
+
+        [TestMethod]
+        public void MemberEqualsMember()
+        {
+            var testObj = new MemberOperaterMemberTestObject()
+            {
+                Source = "bob",
+                Target = "bob"
+            };
+
+            var rule = new Rule
+            {
+                MemberName = "Source",
+                Operator = "Equal",
+                TargetValue = "*.Target"
+            };
+
+            var mre = new MRE();
+
+            var func = mre.CompileRule<MemberOperaterMemberTestObject>(rule);
+
+            Assert.IsTrue(func(testObj));
+
+            testObj.Target = "notBob";
+
+            Assert.IsFalse(func(testObj));
+        }
+
         public static Order GetOrder()
         {
             Order order = new Order()
