@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -19,6 +20,9 @@ namespace MicroRuleEngine
 
         private static readonly Lazy<MethodInfo> _miGetItem = new Lazy<MethodInfo>(() =>
             typeof(System.Data.DataRow).GetMethod("get_Item", new Type[] { typeof(string) }));
+
+        private static readonly Lazy<MethodInfo> _miListContains = new Lazy<MethodInfo>(() =>
+            typeof(IList).GetMethod("Contains", new[] { typeof(object) }));
 
         private static readonly Tuple<string, Lazy<MethodInfo>>[] _enumrMethodsByName =
             new Tuple<string, Lazy<MethodInfo>>[]
@@ -322,6 +326,10 @@ namespace MicroRuleEngine
                         propExpression,
                         Expression.MakeMemberAccess(null, typeof(Placeholder).GetField("Decimal"))
                     );
+                case "IsInInput":
+                    return Expression.Call(Expression.Constant(rule.Inputs.ToList()),
+                                           _miListContains.Value,
+                                           propExpression);
                 default:
                     break;
             }
@@ -635,7 +643,8 @@ namespace MicroRuleEngine
                     mreOperator.IsInteger.ToString("g"),
                     mreOperator.IsSingle.ToString("g"),
                     mreOperator.IsDouble.ToString("g"),
-                    mreOperator.IsDecimal.ToString("g")
+                    mreOperator.IsDecimal.ToString("g"),
+                    mreOperator.IsInInput.ToString("g"),
                 };
             public static List<Operator> Operators(Type type, bool addLogicOperators = false, bool noOverloads = true)
             {
@@ -944,7 +953,11 @@ namespace MicroRuleEngine
         /// <summary>
         /// Checks that a value can be 'TryParsed' to a Decimal
         /// </summary>
-        IsDecimal = 104
+        IsDecimal = 104,
+        /// <summary>
+        /// Checks if the value of the property is in the input list
+        /// </summary>
+        IsInInput = 105
     }
 
 

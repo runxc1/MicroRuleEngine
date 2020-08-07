@@ -57,6 +57,7 @@
   <ItemGroup>
     <Compile Include="ExceptionTests.cs" />
     <Compile Include="IsTypeTests.cs" />
+    <Compile Include="Models\MemberOperaterMemberTestObject.cs" />
     <Compile Include="NewAPI.cs" />
     <Compile Include="Models\Order.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
