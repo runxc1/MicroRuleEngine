@@ -125,6 +125,59 @@ examples:
 
 How Can I Store Rules?
 ---------------------
+
+If using .NET Core it is possible to use the options pattern to directly load rules from the application JSON configuration into the rule class.
+
+AppSettings
+```JSON
+"Ruleset": {
+  "Operator": "Or",
+  "Rules": [
+    {
+      "MemberName": "Customer.FirstName",
+      "Operator": "Equal",
+      "TargetValue": "John"
+    },
+    {
+      "MemberName": "Customer.FirstName",
+      "Operator": "Equal",
+      "TargetValue": "Judy"
+    }
+  ]
+}
+```
+
+Startup
+```C#
+public void ConfigureServices(IServiceCollection services)
+{
+    services.Configure<Rule>(opt => Configuration.GetSection("Ruleset").Bind(opt));
+}
+```
+
+Controller
+```C#
+public class HomeController : Controller
+{
+    private Func<Order, bool> _compiledRule;
+
+    public HomeController(IOptions<Rule> ruleset)
+    {
+        _compiledRule = new MRE().CompileRule<Order>(ruleset.Value);
+    }
+
+    public IActionResult Index()
+    {
+        var order = this.GetOrder();
+
+        if (_compiledRule(order))
+            return View("SpecialOffers");
+        else
+            return View();
+    }
+}
+```
+
 The `Rule` Class is just a **POCO** so you can store your rules as serialized `XML`, `JSON`, etc.
 
 #### Forked many times and now updated to pull in a lot of the great work done by jamescurran, nazimkov and others that help improve the API

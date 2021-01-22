@@ -239,7 +239,7 @@ namespace MicroRuleEngine.Tests
             var rule = new Rule()
             {
                 Operator = "IsInInput",
-                Inputs = new List<string> { "hello" }
+                Inputs = new List<object> { "hello" }
             };
 
             var mre = new MRE();
@@ -257,7 +257,7 @@ namespace MicroRuleEngine.Tests
             var rule = new Rule()
             {
                 Operator = "IsInInput",
-                Inputs = new List<string> { "hello", "World" }
+                Inputs = new List<object> { "hello", "World" }
             };
 
             var mre = new MRE();
@@ -275,7 +275,7 @@ namespace MicroRuleEngine.Tests
             var rule = new Rule()
             {
                 Operator = "IsInInput",
-                Inputs = new List<string> { "hello", "World" }
+                Inputs = new List<object> { "hello", "World" }
             };
 
             var mre = new MRE();

@@ -700,14 +700,13 @@ namespace MicroRuleEngine
     {
         public Rule()
         {
-            Inputs = Enumerable.Empty<object>();
         }
 
         [DataMember] public string MemberName { get; set; }
         [DataMember] public string Operator { get; set; }
         [DataMember] public object TargetValue { get; set; }
         [DataMember] public IList<Rule> Rules { get; set; }
-        [DataMember] public IEnumerable<object> Inputs { get; set; }
+        [DataMember] public IList<object> Inputs { get; set; }
 
 
         public static Rule operator |(Rule lhs, Rule rhs)
