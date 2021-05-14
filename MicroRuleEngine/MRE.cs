@@ -42,14 +42,30 @@ namespace MicroRuleEngine
         private static readonly Lazy<MethodInfo> _miDecimalTryParse = new Lazy<MethodInfo>(() =>
             typeof(Decimal).GetMethod("TryParse", new Type[] { typeof(string), Type.GetType("System.Decimal&") }));
 
+
         public Func<T, bool> CompileRule<T>(Rule r)
         {
+            return CompileRule<T>(r,
+                                  true);
+        }
+
+
+        public Func<T, bool> CompileRule<T>(Rule r, bool useTryCatchForNulls)
+        {
             var paramUser = Expression.Parameter(typeof(T));
-            Expression expr = GetExpressionForRule(typeof(T), r, paramUser);
+            Expression expr = GetExpressionForRule(typeof(T), r, paramUser, useTryCatchForNulls);
 
             return Expression.Lambda<Func<T, bool>>(expr, paramUser).Compile();
         }
-        public static Expression<Func<T, bool>> ToExpression<T>(Rule r, bool useTryCatchForNulls = true)
+
+
+        public static Expression<Func<T, bool>> ToExpression<T>(Rule r)
+        {
+            return ToExpression<T>(r,
+                                   true);
+        }
+
+        public static Expression<Func<T, bool>> ToExpression<T>(Rule r, bool useTryCatchForNulls)
         {
             var paramUser = Expression.Parameter(typeof(T));
             Expression expr = GetExpressionForRule(typeof(T), r, paramUser, useTryCatchForNulls);
@@ -57,47 +73,91 @@ namespace MicroRuleEngine
             return Expression.Lambda<Func<T, bool>>(expr, paramUser);
         }
 
-        public static Func<T, bool> ToFunc<T>(Rule r, bool useTryCatchForNulls = true)
+        public static Func<T, bool> ToFunc<T>(Rule r)
+        {
+            return ToFunc<T>(r,
+                             true);
+        }
+
+        public static Func<T, bool> ToFunc<T>(Rule r, bool useTryCatchForNulls)
         {
             return ToExpression<T>(r, useTryCatchForNulls).Compile();
         }
-        public static Expression<Func<object, bool>> ToExpression(Type type, Rule r)
+
+        public static Expression<Func<object, bool>> ToExpression(Type type,
+                                                                  Rule r)
+        {
+            return ToExpression(type,
+                                r,
+                                true);
+        }
+
+        public static Expression<Func<object, bool>> ToExpression(Type type, Rule r, bool useTryCatchForNulls)
         {
             var paramUser = Expression.Parameter(typeof(object));
-            Expression expr = GetExpressionForRule(type, r, paramUser);
+            Expression expr = GetExpressionForRule(type, r, paramUser, useTryCatchForNulls);
 
             return Expression.Lambda<Func<object, bool>>(expr, paramUser);
         }
 
-        public static Func<object, bool> ToFunc(Type type, Rule r)
+        public static Func<object, bool> ToFunc(Type type,
+                                                Rule r)
         {
-            return ToExpression(type, r).Compile();
+            return ToFunc(type,
+                          r,
+                          true);
         }
 
-        public Func<object, bool> CompileRule(Type type, Rule r)
+        public static Func<object, bool> ToFunc(Type type, Rule r, bool useTryCatchForNulls)
+        {
+            return ToExpression(type, r, useTryCatchForNulls).Compile();
+        }
+
+        public Func<object, bool> CompileRule(Type type,
+                                              Rule r)
+        {
+            return CompileRule(type,
+                               r,
+                               true);
+        }
+
+        public Func<object, bool> CompileRule(Type type, Rule r, bool useTryCatchForNulls)
         {
             var paramUser = Expression.Parameter(typeof(object));
-            Expression expr = GetExpressionForRule(type, r, paramUser);
+            Expression expr = GetExpressionForRule(type, r, paramUser, useTryCatchForNulls);
 
             return Expression.Lambda<Func<object, bool>>(expr, paramUser).Compile();
         }
 
         public Func<T, bool> CompileRules<T>(IEnumerable<Rule> rules)
         {
+            return CompileRules<T>(rules,
+                                   true);
+        }
+
+        public Func<T, bool> CompileRules<T>(IEnumerable<Rule> rules, bool useTryCatchForNulls)
+        {
             var paramUser = Expression.Parameter(typeof(T));
-            var expr = BuildNestedExpression(typeof(T), rules, paramUser, ExpressionType.And);
+            var expr = BuildNestedExpression(typeof(T), rules, paramUser, ExpressionType.And, useTryCatchForNulls);
             return Expression.Lambda<Func<T, bool>>(expr, paramUser).Compile();
         }
 
         public Func<object, bool> CompileRules(Type type, IEnumerable<Rule> rules)
         {
+            return CompileRules(type,
+                                rules,
+                                true);
+        }
+
+        public Func<object, bool> CompileRules(Type type, IEnumerable<Rule> rules, bool useTryCatchForNulls)
+        {
             var paramUser = Expression.Parameter(type);
-            var expr = BuildNestedExpression(type, rules, paramUser, ExpressionType.And);
+            var expr = BuildNestedExpression(type, rules, paramUser, ExpressionType.And, useTryCatchForNulls);
             return Expression.Lambda<Func<object, bool>>(expr, paramUser).Compile();
         }
 
         // Build() in some forks
-        protected static Expression GetExpressionForRule(Type type, Rule rule, ParameterExpression parameterExpression, bool useTryCatchForNulls = true)
+        protected static Expression GetExpressionForRule(Type type, Rule rule, ParameterExpression parameterExpression, bool useTryCatchForNulls)
         {
             ExpressionType nestedOperator;
             if (ExpressionType.TryParse(rule.Operator, out nestedOperator) &&
@@ -201,9 +261,9 @@ namespace MicroRuleEngine
         }
 
         private static Expression BuildEnumerableOperatorExpression(Type type, Rule rule,
-            ParameterExpression parameterExpression)
+            ParameterExpression parameterExpression, bool useTryCatchForNulls = true)
         {
-            var collectionPropertyExpression = BuildExpr(type, rule, parameterExpression);
+            var collectionPropertyExpression = BuildExpr(type, rule, parameterExpression, useTryCatchForNulls);
 
             var itemType = GetCollectionItemType(collectionPropertyExpression.Type);
             var expressionParameter = Expression.Parameter(itemType);
@@ -211,7 +271,7 @@ namespace MicroRuleEngine
 
             var genericFunc = typeof(Func<,>).MakeGenericType(itemType, typeof(bool));
 
-            var innerExp = BuildNestedExpression(itemType, rule.Rules, expressionParameter, ExpressionType.And);
+            var innerExp = BuildNestedExpression(itemType, rule.Rules, expressionParameter, ExpressionType.And, useTryCatchForNulls);
             var predicate = Expression.Lambda(genericFunc, innerExp, expressionParameter);
 
             var body = Expression.Call(typeof(Enumerable), rule.Operator, new[] { itemType },
@@ -239,7 +299,7 @@ namespace MicroRuleEngine
                     select tup.Item2.Value).FirstOrDefault();
         }
 
-        private static Expression BuildExpr(Type type, Rule rule, Expression param, bool useTryCatch = true)
+        private static Expression BuildExpr(Type type, Rule rule, Expression param, bool useTryCatch)
         {
             Expression propExpression;
             Type propType;
@@ -343,7 +403,7 @@ namespace MicroRuleEngine
                     ? Expression.Call(enumrOperation.MakeGenericMethod(elementType),
                         propExpression,
                         Expression.Lambda(
-                            BuildNestedExpression(elementType, rule.Rules, lambdaParam, ExpressionType.AndAlso),
+                            BuildNestedExpression(elementType, rule.Rules, lambdaParam, ExpressionType.AndAlso, useTryCatch),
                             lambdaParam)
 
 
