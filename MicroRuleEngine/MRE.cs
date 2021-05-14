@@ -27,8 +27,8 @@ namespace MicroRuleEngine
         private static readonly Tuple<string, Lazy<MethodInfo>>[] _enumrMethodsByName =
             new Tuple<string, Lazy<MethodInfo>>[]
             {
-                Tuple.Create("Any", new Lazy<MethodInfo>(() => GetLinqMethod("Any", 2))),
-                Tuple.Create("All", new Lazy<MethodInfo>(() => GetLinqMethod("All", 2))),
+                Tuple.Create("Any",   new Lazy<MethodInfo>(() => GetLinqMethod("Any",   2))),
+                Tuple.Create("All",   new Lazy<MethodInfo>(() => GetLinqMethod("All",   2))),
             };
         private static readonly Lazy<MethodInfo> _miIntTryParse = new Lazy<MethodInfo>(() =>
             typeof(Int32).GetMethod("TryParse", new Type[] { typeof(string), Type.GetType("System.Int32&") }));
@@ -42,7 +42,7 @@ namespace MicroRuleEngine
         private static readonly Lazy<MethodInfo> _miDecimalTryParse = new Lazy<MethodInfo>(() =>
             typeof(Decimal).GetMethod("TryParse", new Type[] { typeof(string), Type.GetType("System.Decimal&") }));
 
-        public Func<T, bool> CompileRule<T>(Rule r)
+        public Func<T, bool>CompileRule<T>(Rule r)
         {
             var paramUser = Expression.Parameter(typeof(T));
             Expression expr = GetExpressionForRule(typeof(T), r, paramUser);
@@ -267,6 +267,50 @@ namespace MicroRuleEngine
                 propExpression = GetProperty(param, rule.MemberName);
                 propType = propExpression.Type;
             }
+
+            if(typeof(IEnumerable).IsAssignableFrom(propType))
+            {
+                if (rule.EnumerableFilter != null)
+                {
+                    var elementType = ElementType(propType);
+                    var lambdaParam = Expression.Parameter(elementType,
+                                                           "lambdaParam");
+                    propExpression = Expression.Call(GetLinqMethod("Where",
+                                                                   2)
+                                                        .MakeGenericMethod(elementType),
+                                                     propExpression,
+                                                     Expression.Lambda(BuildExpr(elementType,
+                                                                           rule.EnumerableFilter,
+                                                                           lambdaParam),
+                                                                       lambdaParam));
+
+
+                }
+
+                if(rule.EnumerableValueExpression != null)
+                {
+                    Type                elementType = ElementType(propType);
+                    ParameterExpression parameter   = Expression.Parameter(elementType, "s");
+                    PropertyInfo        property    = elementType.GetProperty(rule.EnumerableValueExpression.MemberName);
+                    Expression selector = Expression.Lambda(Expression.MakeMemberAccess(parameter,
+                                                                property),
+                                                            parameter);
+
+                    MethodInfo generationMethod = GetLinqMethod(rule.EnumerableValueExpression.Operator,
+                                                                2,
+                                               property.PropertyType);
+
+                    var m = generationMethod.MakeGenericMethod(elementType);
+
+                    propExpression = Expression.Call(m,
+                                                  propExpression,
+                                                  selector);
+
+
+                    propType = propExpression.Type;
+                }
+            }
+
             if (useTryCatch)
             {
                 propExpression = Expression.TryCatch(
@@ -274,6 +318,9 @@ namespace MicroRuleEngine
                     Expression.Catch(typeof(NullReferenceException), Expression.Default(propExpression.Type))
                 );
             }
+
+            
+
 
             // is the operator a known .NET operator?
             ExpressionType tBinary;
@@ -395,6 +442,12 @@ namespace MicroRuleEngine
         {
             return typeof(Enumerable).GetMethods(BindingFlags.Static | BindingFlags.Public)
                 .FirstOrDefault(m => m.Name == name && m.GetParameters().Length == numParameter);
+        }
+
+        private static MethodInfo GetLinqMethod(string name, int numParameter, Type returnType)
+        {
+            return typeof(Enumerable).GetMethods(BindingFlags.Static | BindingFlags.Public)
+                                     .FirstOrDefault((m => m.Name == name && m.GetParameters().Length == numParameter && m.ReturnType == returnType));
         }
 
 
@@ -696,19 +749,27 @@ namespace MicroRuleEngine
     }
 
     [DataContract]
-    public class Rule
+    public class Selector
+    {
+        [DataMember] public string MemberName { get; set; }
+        [DataMember] public string Operator   { get; set; }
+    }
+
+
+    [DataContract]
+    public class Rule : Selector
     {
         public Rule()
         {
             Inputs = Enumerable.Empty<object>();
         }
-
-        [DataMember] public string MemberName { get; set; }
-        [DataMember] public string Operator { get; set; }
+        
         [DataMember] public object TargetValue { get; set; }
-        [DataMember] public IList<Rule> Rules { get; set; }
-        [DataMember] public IEnumerable<object> Inputs { get; set; }
 
+        [DataMember] public Rule                EnumerableFilter      { get; set; }
+        [DataMember] public Selector            EnumerableValueExpression { get; set; }
+        [DataMember] public IList<Rule>         Rules           { get; set; }
+        [DataMember] public IEnumerable<object> Inputs          { get; set; }
 
         public static Rule operator |(Rule lhs, Rule rhs)
         {

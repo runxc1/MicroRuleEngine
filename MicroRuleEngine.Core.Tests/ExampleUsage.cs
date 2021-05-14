@@ -278,5 +278,48 @@ namespace MicroRuleEngine.Tests
             };
             return order;
         }
+
+        [TestMethod]
+        public void EnumerableFilterAndAggregation()
+        {
+            
+
+
+            Order order = GetOrder();
+
+            if (order.Items.Where(x => x.ItemCode.StartsWith("M"))
+                     .Sum(x => x.Cost) > 6)
+            {
+
+            }
+
+
+            Rule rule = new Rule
+                        {
+                            MemberName = "Items",
+                            EnumerableFilter = new Rule
+                                               {
+                                                   MemberName = "ItemCode",
+                                                   Operator   = "StartsWith",
+                                                   Inputs     = new []{"M"}
+                                               },
+                            EnumerableVauleExpression = new Selector
+                                                        {
+                                                            MemberName = "Cost",
+                                                            Operator   = "Sum"
+                                                        },
+                            Operator    = "GreaterThan",
+                            TargetValue = 5
+                        };
+
+            MRE  engine       = new MRE();
+            var  compiledRule = engine.CompileRule<Order>(rule);
+            bool passes       = compiledRule(order);
+            Assert.IsTrue(passes);
+
+            order.Items[0].Cost = 4m;
+            passes              = compiledRule(order);
+            Assert.IsFalse(passes);
+        }
     }
 }
