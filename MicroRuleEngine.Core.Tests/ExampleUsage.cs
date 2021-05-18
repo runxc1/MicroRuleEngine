@@ -4,6 +4,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using MicroRuleEngine.Core.Tests.Models;
+using Newtonsoft.Json;
 
 namespace MicroRuleEngine.Tests
 {
@@ -382,6 +383,47 @@ namespace MicroRuleEngine.Tests
 
             MRE  engine       = new MRE();
             var  compiledRule = engine.CompileRule<OrderParent>(rule);
+            bool passes       = compiledRule(orderParent);
+            Assert.IsFalse(passes);
+
+            order.Items.Add(new Item());
+            order.Items.Add(new Item());
+
+            passes = compiledRule(orderParent);
+
+            Assert.IsTrue(passes);
+        }
+
+        [TestMethod]
+        public void SerializeThenDeserialize()
+        {
+            
+
+
+            Order order = GetOrder();
+
+            var orderParent = new OrderParent() {PlacedOrder = order};
+
+
+            Rule rule = new Rule
+                        {
+                            MemberName = "PlacedOrder.Items",
+                            EnumerableValueExpression = new Selector
+                                                        {
+                                                            Operator = "Count"
+                                                        },
+                            Operator    = "GreaterThan",
+                            TargetValue = 3
+                        };
+
+            var jsonString = JsonConvert.SerializeObject(rule);
+
+            var deserializedRule = JsonConvert.DeserializeObject<Rule>(jsonString);
+
+
+
+            MRE  engine       = new MRE();
+            var  compiledRule = engine.CompileRule<OrderParent>(deserializedRule);
             bool passes       = compiledRule(orderParent);
             Assert.IsFalse(passes);
 

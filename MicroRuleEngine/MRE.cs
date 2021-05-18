@@ -328,9 +328,21 @@ namespace MicroRuleEngine
                                                                 2,
                                                property.PropertyType);
 
+                    
+
                     if(generationMethod == null)
                     {
                         generationMethod = GetLinqMethod(rule.EnumerableValueExpression.Operator, rule.TargetValue.GetType());
+                    }
+                    if(generationMethod == null)
+                    {
+                        generationMethod = GetLinqMethod(rule.EnumerableValueExpression.Operator);
+                    }
+
+                    if (generationMethod == null)
+                    {
+                        throw new
+                            RulesException($"Unable to find Linq method for {rule.EnumerableValueExpression.Operator}");
                     }
 
                     var m = generationMethod.MakeGenericMethod(elementType);
@@ -490,6 +502,12 @@ namespace MicroRuleEngine
         {
             return typeof(Enumerable).GetMethods(BindingFlags.Static | BindingFlags.Public)
                                      .FirstOrDefault((m => m.Name == name && m.ReturnType == returnType));
+        }
+
+        private static MethodInfo GetLinqMethod(string name)
+        {
+            return typeof(Enumerable).GetMethods(BindingFlags.Static | BindingFlags.Public)
+                                     .FirstOrDefault((m => m.Name == name));
         }
 
 
