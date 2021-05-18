@@ -434,5 +434,66 @@ namespace MicroRuleEngine.Tests
 
             Assert.IsTrue(passes);
         }
+
+        [TestMethod]
+        public void SerializeThenDeserializeComplexRules()
+        {
+            
+
+
+            Order order = GetOrder();
+
+            var orderParent = new OrderParent() {PlacedOrder = order};
+
+
+            Rule rule = new Rule
+                        {
+                            Operator = "AndAlso",
+                            Rules = new List<Rule>
+                                    {
+
+                                        new Rule
+                                        {
+                                            MemberName = "PlacedOrder.Items",
+                                            EnumerableValueExpression = new Selector
+                                                                        {
+                                                                            Operator = "Count"
+                                                                        },
+                                            Operator    = "GreaterThan",
+                                            TargetValue = 3
+                                        },
+
+                                        new Rule
+                                        {
+                                            MemberName = "PlacedOrder.Items",
+                                            EnumerableValueExpression = new Selector
+                                                                        {
+                                                                            MemberName = "Cost",
+                                                                            Operator   = "Sum"
+                                                                        },
+                                            Operator    = "GreaterThan",
+                                            TargetValue = 5
+                                        }
+                                    }
+                        };
+
+            var jsonString = JsonConvert.SerializeObject(rule);
+
+            var deserializedRule = JsonConvert.DeserializeObject<Rule>(jsonString);
+
+
+
+            MRE  engine       = new MRE();
+            var  compiledRule = engine.CompileRule<OrderParent>(deserializedRule);
+            bool passes       = compiledRule(orderParent);
+            Assert.IsFalse(passes);
+
+            order.Items.Add(new Item());
+            order.Items.Add(new Item());
+
+            passes = compiledRule(orderParent);
+
+            Assert.IsTrue(passes);
+        }
     }
 }
