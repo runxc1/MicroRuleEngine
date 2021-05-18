@@ -140,11 +140,22 @@ namespace MicroRuleEngine
         private static readonly Regex _regexIndexed =
 	        new Regex(@"(?'Collection'\w+)\[(?:(?'Index'\d+)|(?:['""](?'Key'\w+)[""']))\]", RegexOptions.Compiled);
 
-        private static Expression GetProperty(Expression param, string propname)
+
+        private static Expression GetProperty(Expression param,
+                                              string     propname)
+        {
+            return GetProperty(param,
+                               propname,
+                               out _);
+        }
+
+        private static Expression GetProperty(Expression param, string propname, out PropertyInfo propertyInfo)
         {
             Expression propExpression = param;
             String[] childProperties = propname.Split('.');
             var propertyType = param.Type;
+
+            propertyInfo = null;
 
             foreach (var childprop in childProperties)
             {
@@ -157,6 +168,7 @@ namespace MicroRuleEngine
                     if (collectionProp == null)
 	                    throw new RulesException(
 		                    $"Cannot find collection property {collectionname} in class {propertyType.Name} (\"{propname}\")");
+                    propertyInfo = collectionProp;
                     var collexpr = Expression.PropertyOrField(propExpression, collectionname);
 
                     Expression expIndex;
@@ -193,7 +205,8 @@ namespace MicroRuleEngine
                         throw new RulesException(
                                 $"Cannot find property {childprop} in class {propertyType.Name} (\"{propname}\")");
                     propExpression = Expression.PropertyOrField(propExpression, childprop);
-                    propertyType = property.PropertyType;
+                    propertyType   = property.PropertyType;
+                    propertyInfo   = property;
                 }
             }
 
@@ -290,21 +303,44 @@ namespace MicroRuleEngine
                 if(rule.EnumerableValueExpression != null)
                 {
                     Type                elementType = ElementType(propType);
-                    ParameterExpression parameter   = Expression.Parameter(elementType, "s");
-                    PropertyInfo        property    = elementType.GetProperty(rule.EnumerableValueExpression.MemberName);
-                    Expression selector = Expression.Lambda(Expression.MakeMemberAccess(parameter,
-                                                                property),
-                                                            parameter);
+                    ParameterExpression parameter;
+
+                    PropertyInfo property;
+                    Expression   selector = null;
+
+                    if(string.IsNullOrEmpty(rule.EnumerableValueExpression.MemberName))
+                    {
+                        GetProperty(param, rule.MemberName, out property);
+                    }
+                    else
+                    {
+                        property  = elementType.GetProperty(rule.EnumerableValueExpression.MemberName);
+                        parameter = Expression.Parameter(elementType, "s");
+                        selector = Expression.Lambda(Expression.MakeMemberAccess(parameter,
+                                                                    property),
+                                                                parameter);
+                    }
+
+
+                    
 
                     MethodInfo generationMethod = GetLinqMethod(rule.EnumerableValueExpression.Operator,
                                                                 2,
                                                property.PropertyType);
 
+                    if(generationMethod == null)
+                    {
+                        generationMethod = GetLinqMethod(rule.EnumerableValueExpression.Operator, rule.TargetValue.GetType());
+                    }
+
                     var m = generationMethod.MakeGenericMethod(elementType);
 
-                    propExpression = Expression.Call(m,
-                                                  propExpression,
-                                                  selector);
+                    propExpression = selector == null
+                                         ? Expression.Call(m,
+                                                           propExpression)
+                                         : Expression.Call(m,
+                                                           propExpression,
+                                                           selector);
 
 
                     propType = propExpression.Type;
@@ -449,6 +485,13 @@ namespace MicroRuleEngine
             return typeof(Enumerable).GetMethods(BindingFlags.Static | BindingFlags.Public)
                                      .FirstOrDefault((m => m.Name == name && m.GetParameters().Length == numParameter && m.ReturnType == returnType));
         }
+
+        private static MethodInfo GetLinqMethod(string name, Type returnType)
+        {
+            return typeof(Enumerable).GetMethods(BindingFlags.Static | BindingFlags.Public)
+                                     .FirstOrDefault((m => m.Name == name && m.ReturnType == returnType));
+        }
+
 
 
         private static Expression GetDataRowField(Expression prm, string member, string typeName)

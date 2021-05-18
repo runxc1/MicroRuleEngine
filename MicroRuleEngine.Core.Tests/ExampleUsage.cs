@@ -245,6 +245,11 @@ namespace MicroRuleEngine.Tests
             Assert.IsFalse(passes);
         }
 
+        public class OrderParent
+        {
+            public Order PlacedOrder { get; set; }
+        }
+
         public static Order GetOrder()
         {
             Order order = new Order()
@@ -303,7 +308,7 @@ namespace MicroRuleEngine.Tests
                                                    Operator   = "StartsWith",
                                                    Inputs     = new []{"M"}
                                                },
-                            EnumerableVauleExpression = new Selector
+                            EnumerableValueExpression = new Selector
                                                         {
                                                             MemberName = "Cost",
                                                             Operator   = "Sum"
@@ -320,6 +325,72 @@ namespace MicroRuleEngine.Tests
             order.Items[0].Cost = 4m;
             passes              = compiledRule(order);
             Assert.IsFalse(passes);
+        }
+
+        [TestMethod]
+        public void CountAggregation()
+        {
+
+            Order order = GetOrder();
+
+            Rule rule = new Rule
+                        {
+                            MemberName = "Items",
+                            EnumerableValueExpression = new Selector
+                                                        {
+                                                            Operator   = "Count"
+                                                        },
+                            Operator    = "GreaterThan",
+                            TargetValue = 3
+                        };
+
+            MRE  engine       = new MRE();
+            var  compiledRule = engine.CompileRule<Order>(rule);
+            bool passes       = compiledRule(order);
+            Assert.IsFalse(passes);
+
+            order.Items.Add(new Item());
+            order.Items.Add(new Item());
+
+            passes = compiledRule(order);
+
+            Assert.IsTrue(passes);
+
+        }
+
+        [TestMethod]
+        public void EnumerableAggregationOnChild()
+        {
+            
+
+
+            Order order = GetOrder();
+
+            var orderParent = new OrderParent() {PlacedOrder = order};
+
+
+            Rule rule = new Rule
+                        {
+                            MemberName = "PlacedOrder.Items",
+                            EnumerableValueExpression = new Selector
+                                                        {
+                                                            Operator = "Count"
+                                                        },
+                            Operator    = "GreaterThan",
+                            TargetValue = 3
+                        };
+
+            MRE  engine       = new MRE();
+            var  compiledRule = engine.CompileRule<OrderParent>(rule);
+            bool passes       = compiledRule(orderParent);
+            Assert.IsFalse(passes);
+
+            order.Items.Add(new Item());
+            order.Items.Add(new Item());
+
+            passes = compiledRule(orderParent);
+
+            Assert.IsTrue(passes);
         }
     }
 }
